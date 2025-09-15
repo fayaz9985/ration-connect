@@ -14,7 +14,170 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      otp_codes: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          otp_code: string
+          phone_number: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          otp_code: string
+          phone_number: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          otp_code?: string
+          phone_number?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          card_type: string
+          created_at: string
+          id: string
+          name: string
+          phone_number: string
+          ration_card_no: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          card_type: string
+          created_at?: string
+          id?: string
+          name: string
+          phone_number: string
+          ration_card_no: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          card_type?: string
+          created_at?: string
+          id?: string
+          name?: string
+          phone_number?: string
+          ration_card_no?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ration_stock: {
+        Row: {
+          id: string
+          item: string
+          quantity: number
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          item: string
+          quantity?: number
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          item?: string
+          quantity?: number
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ration_stock_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shops: {
+        Row: {
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          owner_name: string
+          shop_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          owner_name: string
+          shop_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          owner_name?: string
+          shop_name?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          created_at: string
+          id: string
+          item: string
+          profile_id: string
+          quantity: number
+          shop_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item: string
+          profile_id: string
+          quantity: number
+          shop_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item?: string
+          profile_id?: string
+          quantity?: number
+          shop_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
