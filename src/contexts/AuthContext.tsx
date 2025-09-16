@@ -99,8 +99,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         return { success: false, error: error.message };
       }
 
-      setProfile(newProfile);
-      localStorage.setItem('rationProfile', JSON.stringify(newProfile));
+      const profile = {
+        ...newProfile,
+        card_type: newProfile.card_type as 'apl' | 'bpl' | 'aay' | 'priority'
+      };
+      setProfile(profile);
+      localStorage.setItem('rationProfile', JSON.stringify(profile));
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Failed to register' };
