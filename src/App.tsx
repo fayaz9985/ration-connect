@@ -11,6 +11,7 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { BuyPage } from "./pages/BuyPage";
 import { SellPage } from "./pages/SellPage";
+import { GetRicePage } from "./pages/GetRicePage";
 import { ConvertPage } from "./pages/ConvertPage";
 import { StockPage } from "./pages/StockPage";
 import { NearbyShopsPage } from "./pages/NearbyShopsPage";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/buy" element={<BuyPage />} />
             <Route path="/sell" element={<SellPage />} />
+            <Route path="/get-rice" element={<GetRicePage />} />
             <Route path="/convert" element={<ConvertPage />} />
             <Route path="/stock" element={<StockPage />} />
             <Route path="/nearby" element={<NearbyShopsPage />} />

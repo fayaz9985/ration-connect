@@ -8,6 +8,7 @@ interface Profile {
   card_type: 'apl' | 'bpl' | 'aay' | 'priority';
   name: string;
   address?: string;
+  family_members: number;
 }
 
 interface AuthContextType {

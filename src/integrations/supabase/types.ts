@@ -46,6 +46,7 @@ export type Database = {
           address: string | null
           card_type: string
           created_at: string
+          family_members: number
           id: string
           name: string
           phone_number: string
@@ -56,6 +57,7 @@ export type Database = {
           address?: string | null
           card_type: string
           created_at?: string
+          family_members?: number
           id?: string
           name: string
           phone_number: string
@@ -66,6 +68,7 @@ export type Database = {
           address?: string | null
           card_type?: string
           created_at?: string
+          family_members?: number
           id?: string
           name?: string
           phone_number?: string
@@ -105,6 +108,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rice_claims: {
+        Row: {
+          claimed_at: string
+          created_at: string
+          delivery_method: string
+          id: string
+          profile_id: string
+          quantity_kg: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          claimed_at?: string
+          created_at?: string
+          delivery_method: string
+          id?: string
+          profile_id: string
+          quantity_kg: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          claimed_at?: string
+          created_at?: string
+          delivery_method?: string
+          id?: string
+          profile_id?: string
+          quantity_kg?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       shops: {
         Row: {

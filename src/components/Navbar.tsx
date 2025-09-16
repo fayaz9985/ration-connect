@@ -21,6 +21,7 @@ export const Navbar = () => {
     { path: '/dashboard', label: 'Home', icon: Home },
     { path: '/buy', label: 'Buy', icon: ShoppingCart },
     { path: '/sell', label: 'Sell', icon: ArrowUpCircle },
+    { path: '/get-rice', label: 'Get Rice', icon: Package },
     { path: '/convert', label: 'Convert', icon: RefreshCw },
     { path: '/stock', label: 'Stock', icon: Package },
     { path: '/nearby', label: 'Nearby', icon: MapPin },
