@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Package, ShoppingCart, Minus, Plus } from 'lucide-react';
+import { Package, ShoppingCart, Minus, Plus, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface StockItem {
   id: string;
@@ -25,9 +26,11 @@ export const BuyPage = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  const [selectedShop, setSelectedShop] = useState<string | null>(null);
   
   const { profile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchStock();
@@ -71,6 +74,16 @@ export const BuyPage = () => {
   };
 
   const addToCart = (item: StockItem) => {
+    // Check if user is trying to add from a different shop
+    if (selectedShop && selectedShop !== item.shop_id) {
+      toast({
+        title: "Different Shop Selected",
+        description: "You can only buy items from one shop at a time. Please clear your cart first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const existingItem = cart.find(cartItem => cartItem.id === item.id);
     
     if (existingItem) {
@@ -89,6 +102,9 @@ export const BuyPage = () => {
       }
     } else {
       setCart([...cart, { ...item, requestedQuantity: 1 }]);
+      if (!selectedShop) {
+        setSelectedShop(item.shop_id);
+      }
     }
   };
 
@@ -103,6 +119,10 @@ export const BuyPage = () => {
       ));
     } else {
       setCart(cart.filter(cartItem => cartItem.id !== itemId));
+      // If cart is empty, reset selected shop
+      if (cart.length === 1) {
+        setSelectedShop(null);
+      }
     }
   };
 
@@ -199,15 +219,18 @@ export const BuyPage = () => {
               <Badge variant="secondary" className="text-lg px-3 py-1">
                 Cart: {getTotalItems()} items
               </Badge>
-              <Button onClick={handlePurchase} disabled={purchasing}>
-                {purchasing ? 'Processing...' : 'Purchase All'}
+              <Button onClick={() => navigate('/view-cart', { state: { cart } })}>
+                <Eye className="h-4 w-4 mr-2" />
+                View All
               </Button>
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stockItems.map((item) => {
+          {stockItems
+            .filter(item => !selectedShop || item.shop_id === selectedShop)
+            .map((item) => {
             const cartQuantity = getCartItemQuantity(item.id);
             
             return (

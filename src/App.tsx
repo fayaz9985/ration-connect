@@ -17,6 +17,7 @@ import { StockPage } from "./pages/StockPage";
 import { NearbyShopsPage } from "./pages/NearbyShopsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { AdminPage } from "./pages/AdminPage";
+import { ViewCartPage } from "./pages/ViewCartPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/nearby" element={<NearbyShopsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/view-cart" element={<ViewCartPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

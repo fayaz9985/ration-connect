@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, Package, Users, TrendingUp, Plus, Edit } from 'lucide-react';
+import { Settings, Package, Users, TrendingUp, Plus, Edit, Shield } from 'lucide-react';
 
 interface StockItem {
   id: string;
@@ -48,7 +49,21 @@ export const AdminPage = () => {
     shop_id: '',
   });
 
+  const { profile } = useAuth();
   const { toast } = useToast();
+
+  // Check if user is admin
+  if (!profile || profile.phone_number !== '99829113379') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Access Denied</h2>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (activeTab === 'stock') fetchStock();

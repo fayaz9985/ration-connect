@@ -56,17 +56,20 @@ export const Navbar = () => {
               </Link>
             ))}
             
-            <Link
-              to="/admin"
-              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                location.pathname === '/admin'
-                  ? 'text-primary bg-primary/10'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              <Settings className="h-4 w-4" />
-              <span>Admin</span>
-            </Link>
+            {/* Only show Admin link for admin user */}
+            {profile?.phone_number === '99829113379' && (
+              <Link
+                to="/admin"
+                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  location.pathname === '/admin'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                <Settings className="h-4 w-4" />
+                <span>Admin</span>
+              </Link>
+            )}
 
             <Button variant="ghost" size="sm" onClick={logout}>
               <LogOut className="h-4 w-4 mr-2" />
