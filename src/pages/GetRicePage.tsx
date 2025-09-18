@@ -23,14 +23,21 @@ export const GetRicePage = () => {
     if (!profile) return;
     
     try {
-      const currentMonth = new Date().toISOString().substring(0, 7); // YYYY-MM format
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      
+      // First day of current month
+      const startDate = new Date(currentYear, currentMonth, 1).toISOString();
+      // First day of next month
+      const endDate = new Date(currentYear, currentMonth + 1, 1).toISOString();
       
       const { data, error } = await supabase
         .from('rice_claims')
         .select('id')
         .eq('profile_id', profile.id)
-        .gte('claimed_at', `${currentMonth}-01`)
-        .lt('claimed_at', `${currentMonth}-32`);
+        .gte('claimed_at', startDate)
+        .lt('claimed_at', endDate);
 
       if (error) throw error;
       
