@@ -57,7 +57,7 @@ export const Navbar = () => {
             ))}
             
             {/* Only show Admin link for admin user */}
-            {profile?.phone_number === '99829113379' && (
+            {profile?.phone_number === '9985913379' && (
               <Link
                 to="/admin"
                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${

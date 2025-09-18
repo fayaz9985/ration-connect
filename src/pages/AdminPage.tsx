@@ -53,7 +53,7 @@ export const AdminPage = () => {
   const { toast } = useToast();
 
   // Check if user is admin
-  if (!profile || profile.phone_number !== '99829113379') {
+  if (!profile || profile.phone_number !== '9985913379') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
