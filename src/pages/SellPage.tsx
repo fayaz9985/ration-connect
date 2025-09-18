@@ -98,7 +98,7 @@ export const SellPage = () => {
       
       toast({
         title: "Rice Sold Successfully",
-        description: `Sold ${quantityNum} kg rice for ₹${totalAmount}. Amount will be credited to your account.`,
+        description: `Your account is credited with ₹${totalAmount} for selling ${quantityNum} kg Rice.`,
       });
 
       setQuantity('');

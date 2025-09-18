@@ -129,7 +129,7 @@ export const ConvertPage = () => {
 
       toast({
         title: "Conversion Successful",
-        description: `Successfully converted ${quantityNum} kg Rice to ${convertedQuantity} ${convertTo === 'Oil' ? 'L' : 'kg'} ${convertTo}`,
+        description: `Your rice is being converted into ${convertTo}. Delivery will arrive within 1–3 days depending on distance.`,
       });
 
       setRiceQuantity('');

@@ -21,6 +21,14 @@ interface CartItem extends StockItem {
   requestedQuantity: number;
 }
 
+// Item prices per kg/liter
+const ITEM_PRICES = {
+  Rice: 30,
+  Wheat: 25,
+  Oil: 100,
+  Sugar: 40,
+};
+
 export const BuyPage = () => {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -135,6 +143,16 @@ export const BuyPage = () => {
     return cart.reduce((total, item) => total + item.requestedQuantity, 0);
   };
 
+  const getItemPrice = (itemName: string) => {
+    return ITEM_PRICES[itemName as keyof typeof ITEM_PRICES] || 0;
+  };
+
+  const getTotalCartValue = () => {
+    return cart.reduce((total, item) => {
+      return total + (item.requestedQuantity * getItemPrice(item.item));
+    }, 0);
+  };
+
   const handlePurchase = async () => {
     if (cart.length === 0) {
       toast({
@@ -216,9 +234,14 @@ export const BuyPage = () => {
           
           {cart.length > 0 && (
             <div className="flex items-center space-x-4">
-              <Badge variant="secondary" className="text-lg px-3 py-1">
-                Cart: {getTotalItems()} items
-              </Badge>
+              <div className="text-right">
+                <Badge variant="secondary" className="text-lg px-3 py-1 mb-2">
+                  Cart: {getTotalItems()} items
+                </Badge>
+                <p className="text-sm text-muted-foreground">
+                  Total: ₹{getTotalCartValue()}
+                </p>
+              </div>
               <Button onClick={() => navigate('/view-cart', { state: { cart } })}>
                 <Eye className="h-4 w-4 mr-2" />
                 View All
@@ -240,7 +263,12 @@ export const BuyPage = () => {
                     <CardTitle className="text-lg">{item.item}</CardTitle>
                     <Badge variant="outline">{item.quantity} kg available</Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{item.shop_name}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-sm text-muted-foreground">{item.shop_name}</p>
+                    <p className="text-sm font-semibold text-primary">
+                      ₹{getItemPrice(item.item)}/{item.item === 'Oil' ? 'liter' : 'kg'}
+                    </p>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
@@ -253,7 +281,10 @@ export const BuyPage = () => {
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="mx-3 font-semibold">{cartQuantity} kg</span>
+                        <div className="mx-3 text-center">
+                          <span className="font-semibold">{cartQuantity} {item.item === 'Oil' ? 'L' : 'kg'}</span>
+                          <p className="text-xs text-muted-foreground">₹{cartQuantity * getItemPrice(item.item)}</p>
+                        </div>
                         <Button
                           variant="outline"
                           size="sm"
