@@ -9,15 +9,28 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
 
-let DefaultIcon = L.divIcon({
-  html: `<div style="background-color: #dc2626; width: 25px; height: 41px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid #991b1b;"></div>`,
+// Create a custom red marker icon
+const redIcon = L.icon({
+  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 41" width="25" height="41">
+      <path fill="#dc2626" stroke="#991b1b" stroke-width="2" d="M12.5,1 C19.4,1 25,6.6 25,13.5 C25,23.5 12.5,40 12.5,40 C12.5,40 0,23.5 0,13.5 C0,6.6 5.6,1 12.5,1 Z"/>
+      <circle fill="#fff" cx="12.5" cy="13.5" r="5"/>
+    </svg>
+  `),
+  shadowUrl: iconShadow,
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  className: 'custom-div-icon'
+  shadowSize: [41, 41]
 });
 
-L.Marker.prototype.options.icon = DefaultIcon;
+// Fix leaflet's default icon path issues
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: iconRetina,
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+});
 
 interface Shop {
   id: string;
@@ -92,6 +105,7 @@ export const MapComponent = ({
           <Marker
             key={shop.id}
             position={[shop.latitude, shop.longitude]}
+            icon={redIcon}
           >
             <Popup>
               <div className="p-2">
