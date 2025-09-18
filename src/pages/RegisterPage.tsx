@@ -22,6 +22,7 @@ export const RegisterPage = () => {
     ration_card_no: '',
     card_type: '',
     address: '',
+    family_members: 4,
   });
 
   const { sendOtp, verifyOtp, register } = useAuth();
@@ -181,6 +182,19 @@ export const RegisterPage = () => {
                   <SelectItem value="priority">Priority Household</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="family_members">Number of Family Members *</Label>
+              <Input
+                id="family_members"
+                type="number"
+                value={formData.family_members}
+                onChange={(e) => setFormData({ ...formData, family_members: parseInt(e.target.value) || 1 })}
+                placeholder="Enter number of family members"
+                min="1"
+                max="20"
+              />
             </div>
 
             <div className="space-y-2">
