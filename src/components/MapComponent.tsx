@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -53,6 +52,9 @@ export const MapComponent = ({
 }: MapComponentProps) => {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<L.LayerGroup | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetchShops();
@@ -77,6 +79,44 @@ export const MapComponent = ({
     }
   };
 
+  // Initialize Leaflet map once
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+    mapRef.current = L.map(containerRef.current).setView(center, zoom);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(mapRef.current);
+
+    markersRef.current = L.layerGroup().addTo(mapRef.current);
+  }, [center, zoom]);
+
+  // Update markers when shops data changes
+  useEffect(() => {
+    if (!mapRef.current || !markersRef.current) return;
+    markersRef.current.clearLayers();
+
+    shops.forEach((shop) => {
+      const marker = L.marker([shop.latitude, shop.longitude], { icon: redIcon });
+      marker.bindPopup(
+        `<div class="p-2">
+          <strong class="text-sm">${shop.shop_name}</strong><br/>
+          <span class="text-xs">Owner: ${shop.owner_name}</span><br/>
+          <span class="text-xs text-muted-foreground">Lat: ${shop.latitude.toFixed(4)}, Lng: ${shop.longitude.toFixed(4)}</span>
+        </div>`
+      );
+      marker.addTo(markersRef.current!);
+    });
+  }, [shops]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
   if (loading) {
     return (
       <div 
@@ -90,35 +130,7 @@ export const MapComponent = ({
 
   return (
     <div style={{ height }} className="rounded-lg overflow-hidden border">
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        
-        {shops.map((shop) => (
-          <Marker
-            key={shop.id}
-            position={[shop.latitude, shop.longitude]}
-            icon={redIcon}
-          >
-            <Popup>
-              <div className="p-2">
-                <h3 className="font-semibold text-sm">{shop.shop_name}</h3>
-                <p className="text-xs text-gray-600">Owner: {shop.owner_name}</p>
-                <p className="text-xs text-gray-500">
-                  Lat: {shop.latitude.toFixed(4)}, Lng: {shop.longitude.toFixed(4)}
-                </p>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+      <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
     </div>
   );
 };
