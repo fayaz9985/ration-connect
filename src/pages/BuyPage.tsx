@@ -167,12 +167,20 @@ export const BuyPage = () => {
     
     try {
       // Create transactions for each cart item
+      const currentDate = new Date();
+      const estimatedDeliveryDate = new Date(currentDate);
+      estimatedDeliveryDate.setDate(currentDate.getDate() + Math.floor(Math.random() * 5) + 3); // 3-7 days
+
       const transactions = cart.map(item => ({
         profile_id: profile!.id,
         shop_id: item.shop_id,
         item: item.item,
         quantity: item.requestedQuantity,
         type: 'buy' as const,
+        delivery_status: 'confirmed',
+        estimated_delivery_date: estimatedDeliveryDate.toISOString().split('T')[0],
+        delivery_address: profile?.address || 'Address not provided',
+        delivery_notes: `Purchase order for ${item.requestedQuantity} ${item.item === 'Oil' ? 'L' : 'kg'} ${item.item}`,
       }));
 
       const { error: transactionError } = await supabase

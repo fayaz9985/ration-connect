@@ -57,7 +57,7 @@ export const SellPage = () => {
 
       if (shopError) throw shopError;
 
-      // Create sell transaction
+      // Create sell transaction (no delivery needed for selling)
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert([{

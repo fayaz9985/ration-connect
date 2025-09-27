@@ -74,7 +74,11 @@ export const ConvertPage = () => {
 
       const convertedQuantity = Math.floor(quantityNum * conversionRate.rate * 100) / 100;
 
-      // Create conversion transaction
+      // Create conversion transaction with delivery tracking
+      const currentDate = new Date();
+      const estimatedDeliveryDate = new Date(currentDate);
+      estimatedDeliveryDate.setDate(currentDate.getDate() + Math.floor(Math.random() * 3) + 1); // 1-3 days for conversions
+
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert([{
@@ -83,6 +87,10 @@ export const ConvertPage = () => {
           item: `${quantityNum}kg Rice → ${convertedQuantity}kg ${convertTo}`,
           quantity: quantityNum,
           type: 'convert',
+          delivery_status: 'confirmed',
+          estimated_delivery_date: estimatedDeliveryDate.toISOString().split('T')[0],
+          delivery_address: profile?.address || 'Address not provided',
+          delivery_notes: `Conversion order: ${quantityNum}kg Rice converted to ${convertedQuantity}${convertTo === 'Oil' ? 'L' : 'kg'} ${convertTo}`,
         }]);
 
       if (transactionError) throw transactionError;

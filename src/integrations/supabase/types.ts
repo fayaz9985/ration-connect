@@ -171,7 +171,12 @@ export type Database = {
       }
       transactions: {
         Row: {
+          actual_delivery_date: string | null
           created_at: string
+          delivery_address: string | null
+          delivery_notes: string | null
+          delivery_status: string | null
+          estimated_delivery_date: string | null
           id: string
           item: string
           profile_id: string
@@ -180,7 +185,12 @@ export type Database = {
           type: string
         }
         Insert: {
+          actual_delivery_date?: string | null
           created_at?: string
+          delivery_address?: string | null
+          delivery_notes?: string | null
+          delivery_status?: string | null
+          estimated_delivery_date?: string | null
           id?: string
           item: string
           profile_id: string
@@ -189,7 +199,12 @@ export type Database = {
           type: string
         }
         Update: {
+          actual_delivery_date?: string | null
           created_at?: string
+          delivery_address?: string | null
+          delivery_notes?: string | null
+          delivery_status?: string | null
+          estimated_delivery_date?: string | null
           id?: string
           item?: string
           profile_id?: string
