@@ -10,7 +10,8 @@ import {
   MapPin, 
   User, 
   Settings,
-  LogOut 
+  LogOut,
+  History
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -23,6 +24,7 @@ export const Navbar = () => {
     { path: '/sell', label: 'Sell', icon: ArrowUpCircle },
     { path: '/get-rice', label: 'Get Rice', icon: Package },
     { path: '/convert', label: 'Convert', icon: RefreshCw },
+    { path: '/order-history', label: 'History', icon: History },
     { path: '/stock', label: 'Stock', icon: Package },
     { path: '/nearby', label: 'Nearby', icon: MapPin },
     { path: '/profile', label: 'Profile', icon: User },
