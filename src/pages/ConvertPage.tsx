@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { RefreshCw, ArrowRight } from 'lucide-react';
+import { format, addDays } from 'date-fns';
 
 interface ConversionRate {
   from: string;
@@ -79,21 +80,20 @@ export const ConvertPage = () => {
       const estimatedDeliveryDate = new Date(currentDate);
       estimatedDeliveryDate.setDate(currentDate.getDate() + Math.floor(Math.random() * 3) + 1); // 1-3 days for conversions
 
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert([{
-          profile_id: profile!.id,
-          shop_id: shopData.id,
-          item: `${quantityNum}kg Rice → ${convertedQuantity}kg ${convertTo}`,
-          quantity: quantityNum,
-          type: 'convert',
-          delivery_status: 'confirmed',
-          estimated_delivery_date: estimatedDeliveryDate.toISOString().split('T')[0],
-          delivery_address: profile?.address || 'Address not provided',
-          delivery_notes: `Conversion order: ${quantityNum}kg Rice converted to ${convertedQuantity}${convertTo === 'Oil' ? 'L' : 'kg'} ${convertTo}`,
-        }]);
+        const { error: transactionError } = await supabase
+          .from('transactions')
+          .insert([{
+            profile_id: profile!.id,
+            shop_id: shopData.id,
+            item: `${quantityNum}kg Rice → ${convertedQuantity}kg ${convertTo}`,
+            quantity: quantityNum,
+            type: 'convert',
+            delivery_status: 'confirmed',
+            estimated_delivery_date: format(estimatedDeliveryDate, 'yyyy-MM-dd'),
+            delivery_address: profile?.address || 'Address not provided'
+          }]);
 
-      if (transactionError) throw transactionError;
+        if (transactionError) throw transactionError;
 
       // Update rice stock (remove converted rice)
       const { data: riceStock } = await supabase

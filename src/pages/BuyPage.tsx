@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Package, ShoppingCart, Minus, Plus, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { format, addDays } from 'date-fns';
 
 interface StockItem {
   id: string;
@@ -178,9 +179,8 @@ export const BuyPage = () => {
         quantity: item.requestedQuantity,
         type: 'buy' as const,
         delivery_status: 'confirmed',
-        estimated_delivery_date: estimatedDeliveryDate.toISOString().split('T')[0],
-        delivery_address: profile?.address || 'Address not provided',
-        delivery_notes: `Purchase order for ${item.requestedQuantity} ${item.item === 'Oil' ? 'L' : 'kg'} ${item.item}`,
+        estimated_delivery_date: format(estimatedDeliveryDate, 'yyyy-MM-dd'),
+        delivery_address: profile?.address || 'Address not provided'
       }));
 
       const { error: transactionError } = await supabase

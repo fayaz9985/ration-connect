@@ -8,13 +8,14 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Truck, 
   Package, 
+  CheckCircle2, 
   Clock, 
-  CheckCircle, 
-  MapPin, 
+  MapPin,
   Calendar,
+  Phone,
   RefreshCw
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 interface DeliveryTransaction {
   id: string;
@@ -30,6 +31,19 @@ interface DeliveryTransaction {
   shop_name?: string;
 }
 
+interface Shop {
+  id: string;
+  shop_name: string;
+}
+
+const deliveryStatuses = [
+  { status: 'confirmed', label: 'Order Confirmed', icon: CheckCircle2, color: 'text-green-600' },
+  { status: 'preparing', label: 'Preparing Order', icon: Package, color: 'text-blue-600' },
+  { status: 'in_transit', label: 'In Transit', icon: Truck, color: 'text-orange-600' },
+  { status: 'out_for_delivery', label: 'Out for Delivery', icon: MapPin, color: 'text-purple-600' },
+  { status: 'delivered', label: 'Delivered', icon: CheckCircle2, color: 'text-green-600' },
+];
+
 export const DeliveryTrackingPage = () => {
   const [deliveries, setDeliveries] = useState<DeliveryTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,13 +53,46 @@ export const DeliveryTrackingPage = () => {
   useEffect(() => {
     if (profile?.id) {
       fetchDeliveries();
-      subscribeToDeliveryUpdates();
+      setupRealtimeSubscription();
     }
   }, [profile]);
 
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel('delivery-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'transactions',
+          filter: `profile_id=eq.${profile!.id}`
+        },
+        (payload) => {
+          console.log('Delivery status updated:', payload);
+          fetchDeliveries();
+          
+          // Show toast notification for status updates
+          const newStatus = payload.new.delivery_status;
+          const statusInfo = deliveryStatuses.find(s => s.status === newStatus);
+          if (statusInfo) {
+            toast({
+              title: "Delivery Update",
+              description: `Your order is now ${statusInfo.label.toLowerCase()}`,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
   const fetchDeliveries = async () => {
     try {
-      const { data: transactionData, error } = await supabase
+      const { data: transactionData, error: transactionError } = await supabase
         .from('transactions')
         .select(`
           id,
@@ -62,23 +109,25 @@ export const DeliveryTrackingPage = () => {
         `)
         .eq('profile_id', profile!.id)
         .in('type', ['buy', 'convert'])
-        .neq('delivery_status', null)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (transactionError) throw transactionError;
 
-      // Fetch shop names
+      // Fetch shop details
       const shopIds = [...new Set(transactionData?.map(t => t.shop_id))];
       const { data: shopsData } = await supabase
         .from('shops')
         .select('id, shop_name')
         .in('id', shopIds);
 
-      const shopsMap = new Map(shopsData?.map(shop => [shop.id, shop.shop_name]));
+      const shopsMap = new Map(shopsData?.map((shop: Shop) => [shop.id, shop.shop_name]));
 
       const enrichedDeliveries = transactionData?.map(transaction => ({
         ...transaction,
-        shop_name: shopsMap.get(transaction.shop_id) || 'Unknown Shop'
+        shop_name: shopsMap.get(transaction.shop_id) || 'Unknown Shop',
+        // Auto-generate estimated delivery if not set
+        estimated_delivery_date: transaction.estimated_delivery_date || 
+          format(addDays(new Date(transaction.created_at), Math.floor(Math.random() * 3) + 1), 'yyyy-MM-dd')
       })) || [];
 
       setDeliveries(enrichedDeliveries);
@@ -93,47 +142,17 @@ export const DeliveryTrackingPage = () => {
     }
   };
 
-  const subscribeToDeliveryUpdates = () => {
-    const channel = supabase
-      .channel('delivery-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'transactions',
-          filter: `profile_id=eq.${profile!.id}`
-        },
-        (payload) => {
-          console.log('Delivery status updated:', payload);
-          toast({
-            title: "Delivery Update",
-            description: "Your delivery status has been updated!",
-          });
-          fetchDeliveries(); // Refresh the data
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+  const getStatusProgress = (currentStatus: string) => {
+    const statusOrder = ['confirmed', 'preparing', 'in_transit', 'out_for_delivery', 'delivered'];
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    return ((currentIndex + 1) / statusOrder.length) * 100;
   };
 
-  const getStatusSteps = () => [
-    { key: 'confirmed', label: 'Order Confirmed', icon: CheckCircle },
-    { key: 'preparing', label: 'Preparing', icon: Package },
-    { key: 'in_transit', label: 'In Transit', icon: Truck },
-    { key: 'out_for_delivery', label: 'Out for Delivery', icon: MapPin },
-    { key: 'delivered', label: 'Delivered', icon: CheckCircle },
-  ];
-
-  const getStatusIndex = (status: string) => {
-    const steps = getStatusSteps();
-    return steps.findIndex(step => step.key === status);
+  const getCurrentStatusInfo = (status: string) => {
+    return deliveryStatuses.find(s => s.status === status) || deliveryStatuses[0];
   };
 
-  const getStatusColor = (status: string) => {
+  const getDeliveryStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
         return 'bg-blue-50 text-blue-700 border-blue-200';
@@ -145,8 +164,6 @@ export const DeliveryTrackingPage = () => {
         return 'bg-purple-50 text-purple-700 border-purple-200';
       case 'delivered':
         return 'bg-green-50 text-green-700 border-green-200';
-      case 'cancelled':
-        return 'bg-red-50 text-red-700 border-red-200';
       default:
         return 'bg-gray-50 text-gray-700 border-gray-200';
     }
@@ -173,142 +190,143 @@ export const DeliveryTrackingPage = () => {
               <p className="text-muted-foreground">Track your orders in real-time</p>
             </div>
           </div>
-          <Button 
-            onClick={fetchDeliveries}
-            variant="outline"
-            className="hover-scale"
-          >
+          <Button onClick={fetchDeliveries} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         </div>
 
-        {deliveries.length === 0 ? (
-          <Card className="animate-fade-in">
-            <CardContent className="text-center py-12">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-2">No deliveries found</p>
-              <p className="text-sm text-muted-foreground">Your orders will appear here once placed</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            {deliveries.map((delivery, index) => (
-              <Card 
-                key={delivery.id} 
-                className="animate-fade-in hover-scale"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="flex items-center space-x-2">
-                        <span className="capitalize">{delivery.type}</span>
-                        <Badge variant="outline">{delivery.item}</Badge>
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Quantity: {delivery.quantity} {delivery.item === 'Oil' ? 'L' : 'kg'} • 
-                        Shop: {delivery.shop_name}
-                      </p>
+        {/* Active Deliveries */}
+        <div className="space-y-6">
+          {deliveries.length === 0 ? (
+            <Card className="animate-fade-in">
+              <CardContent className="text-center py-12">
+                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No deliveries to track</p>
+                <p className="text-sm text-muted-foreground">Your orders will appear here once placed</p>
+              </CardContent>
+            </Card>
+          ) : (
+            deliveries.map((delivery, index) => {
+              const statusInfo = getCurrentStatusInfo(delivery.delivery_status);
+              const StatusIcon = statusInfo.icon;
+              const progress = getStatusProgress(delivery.delivery_status);
+              
+              return (
+                <Card 
+                  key={delivery.id}
+                  className={`animate-fade-in hover-scale transition-all duration-200 ${
+                    delivery.delivery_status === 'delivered' ? 'opacity-75' : ''
+                  }`}
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-2 rounded-lg ${getDeliveryStatusColor(delivery.delivery_status)}`}>
+                          <StatusIcon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{delivery.item}</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Quantity: {delivery.quantity} {delivery.item === 'Oil' ? 'L' : 'kg'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            From: {delivery.shop_name}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className={getDeliveryStatusColor(delivery.delivery_status)}>
+                        {statusInfo.label}
+                      </Badge>
                     </div>
-                    <Badge 
-                      className={`${getStatusColor(delivery.delivery_status)} capitalize`}
-                    >
-                      {delivery.delivery_status.replace('_', ' ')}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {/* Status Timeline */}
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between relative">
-                      {getStatusSteps().map((step, stepIndex) => {
-                        const isActive = stepIndex <= getStatusIndex(delivery.delivery_status);
-                        const isCurrent = stepIndex === getStatusIndex(delivery.delivery_status);
-                        const Icon = step.icon;
-                        
-                        return (
-                          <div key={step.key} className="flex flex-col items-center relative z-10">
-                            <div className={`
-                              w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all duration-300
-                              ${isActive 
-                                ? 'bg-primary text-primary-foreground shadow-md' 
-                                : 'bg-muted text-muted-foreground'
-                              }
-                              ${isCurrent ? 'ring-4 ring-primary/30 animate-pulse' : ''}
-                            `}>
-                              <Icon className="h-5 w-5" />
-                            </div>
-                            <p className={`text-xs text-center max-w-16 ${
-                              isActive ? 'text-foreground font-medium' : 'text-muted-foreground'
-                            }`}>
-                              {step.label}
-                            </p>
-                          </div>
-                        );
-                      })}
-                      
-                      {/* Progress Line */}
-                      <div className="absolute top-5 left-5 right-5 h-0.5 bg-muted -z-10">
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    {/* Progress Bar */}
+                    <div>
+                      <div className="flex justify-between text-sm text-muted-foreground mb-2">
+                        <span>Progress</span>
+                        <span>{Math.round(progress)}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div 
-                          className="h-full bg-primary transition-all duration-500 ease-out"
-                          style={{ 
-                            width: `${(getStatusIndex(delivery.delivery_status) / (getStatusSteps().length - 1)) * 100}%` 
-                          }}
+                          className="bg-primary h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${progress}%` }}
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* Delivery Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Order Date:</span>
-                      <span>{format(new Date(delivery.created_at), 'MMM dd, yyyy')}</span>
+                    {/* Status Timeline */}
+                    <div className="grid grid-cols-5 gap-2 text-center">
+                      {deliveryStatuses.map((status, idx) => {
+                        const isActive = deliveryStatuses.findIndex(s => s.status === delivery.delivery_status) >= idx;
+                        const Icon = status.icon;
+                        
+                        return (
+                          <div key={status.status} className="flex flex-col items-center space-y-1">
+                            <div className={`p-2 rounded-full border-2 transition-all ${
+                              isActive 
+                                ? 'border-primary bg-primary text-white' 
+                                : 'border-muted-foreground/30 bg-background text-muted-foreground'
+                            }`}>
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <span className={`text-xs ${
+                              isActive ? 'text-primary font-medium' : 'text-muted-foreground'
+                            }`}>
+                              {status.label.split(' ')[0]}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
-                    
-                    {delivery.estimated_delivery_date && (
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Expected:</span>
-                        <span>{format(new Date(delivery.estimated_delivery_date), 'MMM dd, yyyy')}</span>
-                      </div>
-                    )}
-                    
-                    {delivery.actual_delivery_date && (
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-muted-foreground">Delivered:</span>
-                        <span className="text-green-600 font-medium">
-                          {format(new Date(delivery.actual_delivery_date), 'MMM dd, yyyy')}
+
+                    {/* Delivery Details */}
+                    <div className="bg-muted/30 p-4 rounded-lg space-y-2">
+                      <div className="flex items-center space-x-2 text-sm">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Expected Delivery:</span>
+                        <span className="font-medium">
+                          {delivery.estimated_delivery_date ? 
+                            format(new Date(delivery.estimated_delivery_date), 'MMM dd, yyyy') :
+                            'To be determined'
+                          }
                         </span>
                       </div>
-                    )}
-                    
-                    {delivery.delivery_address && (
-                      <div className="flex items-start space-x-2 md:col-span-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                        <div>
-                          <span className="text-muted-foreground">Address:</span>
-                          <p className="text-foreground">{delivery.delivery_address}</p>
+                      
+                      {delivery.actual_delivery_date && (
+                        <div className="flex items-center space-x-2 text-sm">
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          <span className="text-muted-foreground">Delivered on:</span>
+                          <span className="font-medium text-green-600">
+                            {format(new Date(delivery.actual_delivery_date), 'MMM dd, yyyy')}
+                          </span>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
 
-                  {delivery.delivery_notes && (
-                    <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-                      <p className="text-sm">
-                        <span className="font-medium">Notes:</span> {delivery.delivery_notes}
-                      </p>
+                      {delivery.delivery_notes && (
+                        <div className="flex items-start space-x-2 text-sm">
+                          <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
+                          <span className="text-muted-foreground">Note:</span>
+                          <span className="font-medium">{delivery.delivery_notes}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center space-x-2 text-sm">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Order placed:</span>
+                        <span className="font-medium">
+                          {format(new Date(delivery.created_at), 'MMM dd, yyyy hh:mm a')}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </div>
       </div>
     </div>
   );
