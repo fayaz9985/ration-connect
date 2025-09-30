@@ -37,22 +37,10 @@ interface Transaction {
 }
 
 export const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState('stock');
-  const [stockItems, setStockItems] = useState<StockItem[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  const [newStock, setNewStock] = useState({
-    item: '',
-    quantity: '',
-    shop_id: '',
-  });
-
   const { profile } = useAuth();
   const { toast } = useToast();
 
-  // Check if user is admin
+  // Check if user is admin FIRST, before other hooks
   if (!profile || profile.phone_number !== '9985913379') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -64,6 +52,18 @@ export const AdminPage = () => {
       </div>
     );
   }
+
+  const [activeTab, setActiveTab] = useState('stock');
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  const [newStock, setNewStock] = useState({
+    item: '',
+    quantity: '',
+    shop_id: '',
+  });
 
   useEffect(() => {
     if (activeTab === 'stock') fetchStock();
