@@ -48,21 +48,12 @@ export const SellPage = () => {
     setLoading(true);
 
     try {
-      // Get the shop details first
-      const { data: shopData, error: shopError } = await supabase
-        .from('shops')
-        .select('id')
-        .limit(1)
-        .single();
-
-      if (shopError) throw shopError;
-
-      // Create sell transaction (no delivery needed for selling)
+      // Create sell transaction
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert([{
           profile_id: profile!.id,
-          shop_id: shopData.id,
+          shop_id: selectedShop,
           item: 'Rice',
           quantity: quantityNum,
           type: 'sell',
@@ -71,39 +62,47 @@ export const SellPage = () => {
       if (transactionError) throw transactionError;
 
       // Update rice stock (add the sold rice back to stock)
-      const { data: existingStock } = await supabase
+      const { data: existingStock, error: stockCheckError } = await supabase
         .from('ration_stock')
-        .select('quantity')
-        .eq('shop_id', shopData.id)
+        .select('id, quantity')
+        .eq('shop_id', selectedShop)
         .eq('item', 'Rice')
-        .single();
+        .maybeSingle();
+
+      if (stockCheckError) throw stockCheckError;
 
       if (existingStock) {
-        await supabase
+        // Update existing stock
+        const { error: updateError } = await supabase
           .from('ration_stock')
           .update({ quantity: existingStock.quantity + quantityNum })
-          .eq('shop_id', shopData.id)
-          .eq('item', 'Rice');
+          .eq('id', existingStock.id);
+
+        if (updateError) throw updateError;
       } else {
-        await supabase
+        // Create new stock entry
+        const { error: insertError } = await supabase
           .from('ration_stock')
           .insert([{
-            shop_id: shopData.id,
+            shop_id: selectedShop,
             item: 'Rice',
             quantity: quantityNum,
           }]);
+
+        if (insertError) throw insertError;
       }
 
       const totalAmount = quantityNum * ricePrice;
       
       toast({
         title: "Rice Sold Successfully",
-        description: `Your account is credited with ₹${totalAmount} for selling ${quantityNum} kg Rice.`,
+        description: `Your account is credited with ₹${totalAmount} for selling ${quantityNum} kg Rice. Stock updated automatically.`,
       });
 
       setQuantity('');
       setSelectedShop('');
     } catch (error) {
+      console.error('Sell error:', error);
       toast({
         title: "Transaction Failed",
         description: "Failed to sell rice. Please try again.",

@@ -167,6 +167,37 @@ export const BuyPage = () => {
     setPurchasing(true);
     
     try {
+      // First, validate stock availability for all items
+      for (const item of cart) {
+        const { data: currentStock, error: stockCheckError } = await supabase
+          .from('ration_stock')
+          .select('quantity')
+          .eq('id', item.id)
+          .single();
+
+        if (stockCheckError) throw stockCheckError;
+
+        if (!currentStock || currentStock.quantity < item.requestedQuantity) {
+          toast({
+            title: "Insufficient Stock",
+            description: `${item.item} doesn't have enough stock available. Please refresh and try again.`,
+            variant: "destructive",
+          });
+          setPurchasing(false);
+          return;
+        }
+      }
+
+      // Update stock quantities first (to prevent overselling)
+      for (const item of cart) {
+        const { error: stockError } = await supabase
+          .from('ration_stock')
+          .update({ quantity: item.quantity - item.requestedQuantity })
+          .eq('id', item.id);
+
+        if (stockError) throw stockError;
+      }
+
       // Create transactions for each cart item
       const currentDate = new Date();
       const estimatedDeliveryDate = new Date(currentDate);
@@ -189,22 +220,13 @@ export const BuyPage = () => {
 
       if (transactionError) throw transactionError;
 
-      // Update stock quantities
-      for (const item of cart) {
-        const { error: stockError } = await supabase
-          .from('ration_stock')
-          .update({ quantity: item.quantity - item.requestedQuantity })
-          .eq('id', item.id);
-
-        if (stockError) throw stockError;
-      }
-
       toast({
         title: "Purchase Successful",
-        description: `Successfully purchased ${getTotalItems()} items`,
+        description: `Successfully purchased ${getTotalItems()} items. Total: ₹${getTotalCartValue()}`,
       });
 
       setCart([]);
+      setSelectedShop(null);
       fetchStock(); // Refresh stock
     } catch (error) {
       toast({
@@ -212,6 +234,8 @@ export const BuyPage = () => {
         description: "Failed to complete purchase. Please try again.",
         variant: "destructive",
       });
+      // Refresh stock to show current availability
+      fetchStock();
     } finally {
       setPurchasing(false);
     }
