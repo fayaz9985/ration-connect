@@ -19,17 +19,27 @@ export const Navbar = () => {
   const { profile, logout } = useAuth();
   const location = useLocation();
 
-  const navItems = [
-    { path: '/dashboard', label: 'Home', icon: Home },
-    { path: '/buy', label: 'Buy', icon: ShoppingCart },
-    { path: '/sell', label: 'Sell', icon: ArrowUpCircle },
-    { path: '/get-rice', label: 'Get Rice', icon: Package },
-    { path: '/convert', label: 'Convert', icon: RefreshCw },
-    { path: '/track-delivery', label: 'Track', icon: Truck },
-    { path: '/stock', label: 'Stock', icon: Package },
-    { path: '/nearby', label: 'Nearby', icon: MapPin },
-    { path: '/profile', label: 'Profile', icon: User },
+  const isAdmin = profile?.phone_number === '9985913379';
+
+  const allNavItems = [
+    { path: '/dashboard', label: 'Home', icon: Home, adminOnly: false, userOnly: true },
+    { path: '/buy', label: 'Buy', icon: ShoppingCart, adminOnly: false, userOnly: true },
+    { path: '/sell', label: 'Sell', icon: ArrowUpCircle, adminOnly: false, userOnly: true },
+    { path: '/get-rice', label: 'Get Rice', icon: Package, adminOnly: false, userOnly: true },
+    { path: '/convert', label: 'Convert', icon: RefreshCw, adminOnly: false, userOnly: true },
+    { path: '/track-delivery', label: 'Track', icon: Truck, adminOnly: false, userOnly: true },
+    { path: '/stock', label: 'Stock', icon: Package, adminOnly: false, userOnly: false },
+    { path: '/nearby', label: 'Nearby', icon: MapPin, adminOnly: false, userOnly: false },
+    { path: '/profile', label: 'Profile', icon: User, adminOnly: false, userOnly: false },
   ];
+
+  // Filter nav items based on user role
+  const navItems = allNavItems.filter(item => {
+    if (isAdmin) {
+      return !item.userOnly; // Admin sees only items that are NOT userOnly
+    }
+    return true; // Regular users see all items
+  });
 
   if (!profile) return null;
 
