@@ -115,6 +115,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = () => {
     setProfile(null);
     localStorage.removeItem('rationProfile');
+    window.location.href = '/';
   };
 
   const value = {
