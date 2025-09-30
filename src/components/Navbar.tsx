@@ -30,7 +30,7 @@ export const Navbar = () => {
     { path: '/track-delivery', label: 'Track', icon: Truck, adminOnly: false, userOnly: true },
     { path: '/stock', label: 'Stock', icon: Package, adminOnly: false, userOnly: false },
     { path: '/nearby', label: 'Nearby', icon: MapPin, adminOnly: false, userOnly: false },
-    { path: '/profile', label: 'Profile', icon: User, adminOnly: false, userOnly: false },
+    { path: '/profile', label: 'Profile', icon: User, adminOnly: false, userOnly: true },
   ];
 
   // Filter nav items based on user role
