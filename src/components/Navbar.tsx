@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Home, 
   ShoppingCart, 
@@ -88,6 +89,7 @@ export const Navbar = () => {
             )}
 
             <LanguageSwitcher />
+            <ThemeToggle />
 
             <Button variant="ghost" size="sm" onClick={logout}>
               <LogOut className="h-4 w-4 mr-2" />
