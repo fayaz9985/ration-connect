@@ -1,6 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { 
   Home, 
   ShoppingCart, 
@@ -18,19 +20,20 @@ import {
 export const Navbar = () => {
   const { profile, logout } = useAuth();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const isAdmin = profile?.phone_number === '9985913379';
 
   const allNavItems = [
-    { path: '/dashboard', label: 'Home', icon: Home, adminOnly: false, userOnly: true },
-    { path: '/buy', label: 'Buy', icon: ShoppingCart, adminOnly: false, userOnly: true },
-    { path: '/sell', label: 'Sell', icon: ArrowUpCircle, adminOnly: false, userOnly: true },
-    { path: '/get-rice', label: 'Get Rice', icon: Package, adminOnly: false, userOnly: true },
-    { path: '/convert', label: 'Convert', icon: RefreshCw, adminOnly: false, userOnly: true },
-    { path: '/track-delivery', label: 'Track', icon: Truck, adminOnly: false, userOnly: true },
-    { path: '/stock', label: 'Stock', icon: Package, adminOnly: false, userOnly: false },
-    { path: '/nearby', label: 'Nearby', icon: MapPin, adminOnly: false, userOnly: false },
-    { path: '/profile', label: 'Profile', icon: User, adminOnly: false, userOnly: true },
+    { path: '/dashboard', label: t('nav.dashboard'), icon: Home, adminOnly: false, userOnly: true },
+    { path: '/buy', label: t('nav.buy'), icon: ShoppingCart, adminOnly: false, userOnly: true },
+    { path: '/sell', label: t('nav.sell'), icon: ArrowUpCircle, adminOnly: false, userOnly: true },
+    { path: '/get-rice', label: t('nav.getRice'), icon: Package, adminOnly: false, userOnly: true },
+    { path: '/convert', label: t('nav.convert'), icon: RefreshCw, adminOnly: false, userOnly: true },
+    { path: '/track-delivery', label: t('nav.tracking'), icon: Truck, adminOnly: false, userOnly: true },
+    { path: '/stock', label: t('nav.stock'), icon: Package, adminOnly: false, userOnly: false },
+    { path: '/nearby', label: t('nav.nearbyShops'), icon: MapPin, adminOnly: false, userOnly: false },
+    { path: '/profile', label: t('nav.profile'), icon: User, adminOnly: false, userOnly: true },
   ];
 
   // Filter nav items based on user role
@@ -80,13 +83,15 @@ export const Navbar = () => {
                 }`}
               >
                 <Settings className="h-4 w-4" />
-                <span>Admin</span>
+                <span>{t('nav.admin')}</span>
               </Link>
             )}
 
+            <LanguageSwitcher />
+
             <Button variant="ghost" size="sm" onClick={logout}>
               <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              {t('common.logout')}
             </Button>
           </div>
 

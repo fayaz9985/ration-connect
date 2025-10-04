@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +18,7 @@ export const LoginPage = () => {
   const { sendOtp, verifyOtp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSendOtp = async () => {
     if (!phoneNumber || phoneNumber.length !== 10) {
@@ -89,14 +91,14 @@ export const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Login to E-Ration Portal</CardTitle>
+          <CardTitle>{t('auth.loginTitle')}</CardTitle>
           <CardDescription>
-            Enter your mobile number to receive OTP
+            {t('common.phone')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Mobile Number</Label>
+            <Label htmlFor="phone">{t('common.phone')}</Label>
             <Input
               id="phone"
               type="tel"
@@ -114,7 +116,7 @@ export const LoginPage = () => {
               disabled={loading}
               className="w-full"
             >
-              {loading ? 'Sending...' : 'Send OTP'}
+              {loading ? `${t('common.loading')}` : 'Send OTP'}
             </Button>
           ) : (
             <>
@@ -155,9 +157,9 @@ export const LoginPage = () => {
 
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
-              Don't have an account?{' '}
+              {t('auth.dontHaveAccount')}{' '}
               <Button variant="link" onClick={() => navigate('/register')} className="p-0">
-                Register here
+                {t('common.register')}
               </Button>
             </p>
           </div>

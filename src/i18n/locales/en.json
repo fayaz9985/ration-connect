@@ -1,0 +1,96 @@
+{
+  "common": {
+    "login": "Login",
+    "logout": "Logout",
+    "signup": "Sign Up",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "phone": "Phone Number",
+    "address": "Address",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "buy": "Buy",
+    "sell": "Sell",
+    "convert": "Convert",
+    "getRice": "Get Rice",
+    "profile": "Profile",
+    "admin": "Admin",
+    "stock": "Stock",
+    "cart": "View Cart",
+    "orders": "Order History",
+    "tracking": "Delivery Tracking",
+    "nearbyShops": "Nearby Shops"
+  },
+  "home": {
+    "title": "Public Distribution System",
+    "subtitle": "Efficient ration distribution and management",
+    "getStarted": "Get Started",
+    "features": {
+      "title": "Our Features",
+      "buy": "Buy Rations",
+      "buyDesc": "Purchase essential items from authorized shops",
+      "sell": "Sell Items",
+      "sellDesc": "Sell your agricultural produce",
+      "convert": "Convert Tokens",
+      "convertDesc": "Convert your points to cash",
+      "track": "Track Orders",
+      "trackDesc": "Real-time delivery tracking"
+    }
+  },
+  "auth": {
+    "loginTitle": "Login to Your Account",
+    "signupTitle": "Create New Account",
+    "rationCard": "Ration Card Number",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "loginSuccess": "Logged in successfully",
+    "signupSuccess": "Account created successfully",
+    "loginError": "Login failed",
+    "signupError": "Signup failed"
+  },
+  "buy": {
+    "title": "Buy Rations",
+    "selectShop": "Select Shop",
+    "availableItems": "Available Items",
+    "item": "Item",
+    "price": "Price",
+    "available": "Available",
+    "quantity": "Quantity",
+    "addToCart": "Add to Cart",
+    "cart": "Your Cart",
+    "total": "Total",
+    "checkout": "Checkout",
+    "emptyCart": "Your cart is empty",
+    "outOfStock": "Out of stock",
+    "insufficientStock": "Insufficient stock"
+  },
+  "sell": {
+    "title": "Sell Your Produce",
+    "selectShop": "Select Shop to Sell",
+    "quantity": "Quantity (kg)",
+    "pricePerKg": "Price per kg",
+    "totalAmount": "Total Amount",
+    "sellNow": "Sell Now",
+    "sellSuccess": "Sold successfully",
+    "sellError": "Failed to sell"
+  },
+  "profile": {
+    "title": "My Profile",
+    "personalInfo": "Personal Information",
+    "rationCard": "Ration Card Number",
+    "updateProfile": "Update Profile",
+    "updateSuccess": "Profile updated successfully",
+    "updateError": "Failed to update profile"
+  }
+}

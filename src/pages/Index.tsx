@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { 
   Wheat, 
   ShoppingCart, 
@@ -16,6 +18,7 @@ import {
 const Index = () => {
   const { profile, loading } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!loading && profile) {
@@ -56,7 +59,7 @@ const Index = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Wheat className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -68,28 +71,28 @@ const Index = () => {
       <div className="relative bg-gradient-to-br from-primary/10 via-background to-primary/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <Wheat className="h-16 w-16 text-primary mr-4" />
+            <div className="flex items-center justify-center mb-6 gap-4">
+              <Wheat className="h-16 w-16 text-primary" />
               <h1 className="text-5xl font-bold text-foreground">
-                E-Ration Portal
+                {t('home.title')}
               </h1>
+              <LanguageSwitcher />
             </div>
             
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Digital ration distribution system for citizens and shopkeepers. 
-              Manage your ration services seamlessly with mobile OTP authentication.
+              {t('home.subtitle')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/login">
                 <Button size="lg" className="w-full sm:w-auto">
-                  Login to Your Account
+                  {t('common.login')}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/register">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  Create New Account
+                  {t('common.register')}
                 </Button>
               </Link>
             </div>
