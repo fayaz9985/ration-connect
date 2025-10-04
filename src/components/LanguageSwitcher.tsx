@@ -30,6 +30,9 @@ const LanguageSwitcher = () => {
         <DropdownMenuItem onClick={() => changeLanguage('hi')}>
           हिन्दी (Hindi)
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => changeLanguage('te')}>
+          తెలుగు (Telugu)
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
