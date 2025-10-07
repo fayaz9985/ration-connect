@@ -29,28 +29,28 @@ const Index = () => {
   const features = [
     {
       icon: ShoppingCart,
-      title: 'Digital Ration Management',
-      description: 'Buy, sell, and convert ration items digitally without paperwork'
+      title: t('pages.index.digitalManagement'),
+      description: t('pages.index.digitalManagementDesc')
     },
     {
       icon: Smartphone,
-      title: 'Mobile OTP Authentication',
-      description: 'Secure login using mobile number verification'
+      title: t('pages.index.mobileOtp'),
+      description: t('pages.index.mobileOtpDesc')
     },
     {
       icon: MapPin,
-      title: 'Find Nearby Shops',
-      description: 'Locate ration shops near you with integrated maps'
+      title: t('pages.index.findNearby'),
+      description: t('pages.index.findNearbyDesc')
     },
     {
       icon: Users,
-      title: 'Multiple Card Types',
-      description: 'Support for APL, BPL, AAY, and Priority households'
+      title: t('pages.index.multipleCards'),
+      description: t('pages.index.multipleCardsDesc')
     },
     {
       icon: Shield,
-      title: 'Secure Transactions',
-      description: 'All transactions are recorded and tracked securely'
+      title: t('pages.index.secureTransactions'),
+      description: t('pages.index.secureTransactionsDesc')
     },
   ];
 
@@ -104,10 +104,10 @@ const Index = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-foreground mb-4">
-            Why Choose E-Ration Portal?
+            {t('pages.index.whyChoose')}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Experience the future of ration distribution with our comprehensive digital platform
+            {t('pages.index.whyChooseDesc')}
           </p>
         </div>
 
@@ -129,10 +129,10 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Available Services
+              {t('pages.index.availableServices')}
             </h2>
             <p className="text-lg text-muted-foreground">
-              Everything you need for ration management in one place
+              {t('pages.index.availableServicesDesc')}
             </p>
           </div>
 
@@ -141,32 +141,32 @@ const Index = () => {
               <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <ShoppingCart className="h-8 w-8 text-green-600" />
               </div>
-              <h3 className="font-semibold mb-2">Buy Ration</h3>
-              <p className="text-sm text-muted-foreground">Purchase rice, wheat, sugar, oil with your ration card</p>
+              <h3 className="font-semibold mb-2">{t('pages.index.buyRationService')}</h3>
+              <p className="text-sm text-muted-foreground">{t('pages.index.buyRationServiceDesc')}</p>
             </div>
 
             <div className="text-center">
               <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <ArrowRight className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="font-semibold mb-2">Sell Rice</h3>
-              <p className="text-sm text-muted-foreground">Sell unwanted rice back to the government</p>
+              <h3 className="font-semibold mb-2">{t('pages.index.sellRiceService')}</h3>
+              <p className="text-sm text-muted-foreground">{t('pages.index.sellRiceServiceDesc')}</p>
             </div>
 
             <div className="text-center">
               <div className="bg-purple-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Wheat className="h-8 w-8 text-purple-600" />
               </div>
-              <h3 className="font-semibold mb-2">Convert Items</h3>
-              <p className="text-sm text-muted-foreground">Convert rice into other grocery items</p>
+              <h3 className="font-semibold mb-2">{t('pages.index.convertItemsService')}</h3>
+              <p className="text-sm text-muted-foreground">{t('pages.index.convertItemsServiceDesc')}</p>
             </div>
 
             <div className="text-center">
               <div className="bg-red-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <MapPin className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="font-semibold mb-2">Find Shops</h3>
-              <p className="text-sm text-muted-foreground">Locate nearby ration shops with directions</p>
+              <h3 className="font-semibold mb-2">{t('pages.index.findShopsService')}</h3>
+              <p className="text-sm text-muted-foreground">{t('pages.index.findShopsServiceDesc')}</p>
             </div>
           </div>
         </div>
@@ -177,20 +177,20 @@ const Index = () => {
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-12 text-center">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Ready to Get Started?
+              {t('pages.index.readyToStart')}
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Join thousands of users already using our digital ration system
+              {t('pages.index.readyToStartDesc')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
                 <Button size="lg" className="w-full sm:w-auto">
-                  Register Now - It's Free!
+                  {t('pages.index.registerNow')}
                 </Button>
               </Link>
               <Link to="/login">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  Already Have Account? Login
+                  {t('pages.index.alreadyHaveAccountLogin')}
                 </Button>
               </Link>
             </div>
@@ -204,8 +204,8 @@ const Index = () => {
           <div className="flex items-center justify-center">
             <Wheat className="h-8 w-8 text-primary mr-3" />
             <div>
-              <p className="text-foreground font-semibold">E-Ration Portal</p>
-              <p className="text-sm text-muted-foreground">Digital Public Distribution System</p>
+              <p className="text-foreground font-semibold">{t('home.title')}</p>
+              <p className="text-sm text-muted-foreground">{t('pages.index.footer')}</p>
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Edit, Save, History, Phone, CreditCard } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Transaction {
   id: string;
@@ -28,6 +29,7 @@ export const ProfilePage = () => {
   
   const { profile } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     name: profile?.name || '',
@@ -99,8 +101,8 @@ export const ProfilePage = () => {
       if (error) throw error;
 
       toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully",
+        title: t('profile.updateSuccess'),
+        description: t('profile.updateSuccess'),
       });
 
       setEditing(false);
@@ -111,8 +113,8 @@ export const ProfilePage = () => {
       
     } catch (error) {
       toast({
-        title: "Update Failed",
-        description: "Failed to update profile. Please try again.",
+        title: t('profile.updateError'),
+        description: t('profile.updateError'),
         variant: "destructive",
       });
     } finally {
@@ -163,7 +165,7 @@ export const ProfilePage = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading profile...</p>
+          <p className="text-muted-foreground">{t('profile.loadingProfile')}</p>
         </div>
       </div>
     );
@@ -175,8 +177,8 @@ export const ProfilePage = () => {
         <div className="flex items-center mb-8">
           <User className="h-8 w-8 text-primary mr-3" />
           <div>
-            <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
-            <p className="text-muted-foreground">Manage your profile and view transaction history</p>
+            <h1 className="text-3xl font-bold text-foreground">{t('profile.title')}</h1>
+            <p className="text-muted-foreground">{t('profile.manageProfile')}</p>
           </div>
         </div>
 
@@ -187,21 +189,21 @@ export const ProfilePage = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center">
                   <User className="h-5 w-5 mr-2" />
-                  Profile Information
+                  {t('profile.profileInfo')}
                 </CardTitle>
                 {!editing ? (
                   <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                    {t('profile.edit')}
                   </Button>
                 ) : (
                   <div className="flex space-x-2">
                     <Button variant="outline" size="sm" onClick={() => setEditing(false)}>
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                     <Button size="sm" onClick={handleSave} disabled={loading}>
                       <Save className="h-4 w-4 mr-2" />
-                      {loading ? 'Saving...' : 'Save'}
+                      {loading ? t('profile.saving') : t('profile.save')}
                     </Button>
                   </div>
                 )}
@@ -210,7 +212,7 @@ export const ProfilePage = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">{t('profile.fullName')}</Label>
                   {editing ? (
                     <Input
                       id="name"
@@ -223,7 +225,7 @@ export const ProfilePage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Phone Number</Label>
+                  <Label>{t('common.phone')}</Label>
                   <div className="flex items-center">
                     <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
                     <p className="font-medium">{profile.phone_number}</p>
@@ -233,7 +235,7 @@ export const ProfilePage = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Ration Card Number</Label>
+                  <Label>{t('profile.rationCard')}</Label>
                   <div className="flex items-center">
                     <CreditCard className="h-4 w-4 mr-2 text-muted-foreground" />
                     <p className="font-medium">{profile.ration_card_no}</p>
@@ -241,17 +243,17 @@ export const ProfilePage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="card_type">Card Type</Label>
+                  <Label htmlFor="card_type">{t('profile.cardType')}</Label>
                   {editing ? (
                     <Select onValueChange={(value) => setFormData({ ...formData, card_type: value })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select card type" />
+                        <SelectValue placeholder={t('profile.cardType')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="apl">APL (Above Poverty Line)</SelectItem>
-                        <SelectItem value="bpl">BPL (Below Poverty Line)</SelectItem>
-                        <SelectItem value="aay">AAY (Antyodaya Anna Yojana)</SelectItem>
-                        <SelectItem value="priority">Priority Household</SelectItem>
+                        <SelectItem value="apl">{t('profile.apl')}</SelectItem>
+                        <SelectItem value="bpl">{t('profile.bpl')}</SelectItem>
+                        <SelectItem value="aay">{t('profile.aay')}</SelectItem>
+                        <SelectItem value="priority">{t('profile.priority')}</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
@@ -263,17 +265,17 @@ export const ProfilePage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">{t('common.address')}</Label>
                 {editing ? (
                   <Textarea
                     id="address"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="Enter your address"
+                    placeholder={t('common.address')}
                   />
                 ) : (
                   <p className="text-muted-foreground">
-                    {profile.address || 'No address provided'}
+                    {profile.address || t('profile.noAddress')}
                   </p>
                 )}
               </div>
@@ -285,18 +287,18 @@ export const ProfilePage = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <History className="h-5 w-5 mr-2" />
-                Recent Transactions
+                {t('profile.recentTransactions')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {transactionsLoading ? (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">Loading transactions...</p>
+                  <p className="text-muted-foreground">{t('profile.loadingTransactions')}</p>
                 </div>
               ) : transactions.length === 0 ? (
                 <div className="text-center py-8">
                   <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No transactions found</p>
+                  <p className="text-muted-foreground">{t('profile.noTransactions')}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -330,7 +332,7 @@ export const ProfilePage = () => {
                   {transactions.length >= 10 && (
                     <div className="text-center pt-4">
                       <p className="text-sm text-muted-foreground">
-                        Showing recent 10 transactions
+                        {t('profile.showingRecent')}
                       </p>
                     </div>
                   )}

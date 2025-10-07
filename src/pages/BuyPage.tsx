@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Package, ShoppingCart, Minus, Plus, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format, addDays } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface StockItem {
   id: string;
@@ -40,6 +41,7 @@ export const BuyPage = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchStock();
@@ -86,8 +88,8 @@ export const BuyPage = () => {
     // Check if user is trying to add from a different shop
     if (selectedShop && selectedShop !== item.shop_id) {
       toast({
-        title: "Different Shop Selected",
-        description: "You can only buy items from one shop at a time. Please clear your cart first.",
+        title: t('pages.buy.differentShop'),
+        description: t('pages.buy.differentShopDesc'),
         variant: "destructive",
       });
       return;
@@ -104,8 +106,8 @@ export const BuyPage = () => {
         ));
       } else {
         toast({
-          title: "Limit Reached",
-          description: "Cannot add more than available quantity",
+          title: t('pages.buy.limitReached'),
+          description: t('pages.buy.limitReachedDesc'),
           variant: "destructive",
         });
       }
@@ -157,8 +159,8 @@ export const BuyPage = () => {
   const handlePurchase = async () => {
     if (cart.length === 0) {
       toast({
-        title: "Empty Cart",
-        description: "Please add items to cart before purchasing",
+        title: t('pages.buy.emptyCartError'),
+        description: t('pages.buy.emptyCartErrorDesc'),
         variant: "destructive",
       });
       return;
@@ -179,8 +181,8 @@ export const BuyPage = () => {
 
         if (!currentStock || currentStock.quantity < item.requestedQuantity) {
           toast({
-            title: "Insufficient Stock",
-            description: `${item.item} doesn't have enough stock available. Please refresh and try again.`,
+            title: t('pages.buy.insufficientStock'),
+            description: t('pages.buy.insufficientStockDesc', { item: item.item }),
             variant: "destructive",
           });
           setPurchasing(false);
@@ -221,8 +223,8 @@ export const BuyPage = () => {
       if (transactionError) throw transactionError;
 
       toast({
-        title: "Purchase Successful",
-        description: `Successfully purchased ${getTotalItems()} items. Total: ₹${getTotalCartValue()}`,
+        title: t('pages.buy.purchaseSuccess'),
+        description: t('pages.buy.purchaseSuccessDesc', { count: getTotalItems(), total: getTotalCartValue() }),
       });
 
       setCart([]);
@@ -230,8 +232,8 @@ export const BuyPage = () => {
       fetchStock(); // Refresh stock
     } catch (error) {
       toast({
-        title: "Purchase Failed",
-        description: "Failed to complete purchase. Please try again.",
+        title: t('pages.buy.purchaseFailed'),
+        description: t('pages.buy.purchaseFailedDesc'),
         variant: "destructive",
       });
       // Refresh stock to show current availability
@@ -246,7 +248,7 @@ export const BuyPage = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading stock items...</p>
+          <p className="text-muted-foreground">{t('pages.buy.loadingStock')}</p>
         </div>
       </div>
     );
@@ -259,8 +261,8 @@ export const BuyPage = () => {
           <div className="flex items-center">
             <ShoppingCart className="h-8 w-8 text-primary mr-3" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Buy Ration Items</h1>
-              <p className="text-muted-foreground">Purchase ration items from available stock</p>
+              <h1 className="text-3xl font-bold text-foreground">{t('pages.buy.title')}</h1>
+              <p className="text-muted-foreground">{t('pages.buy.subtitle')}</p>
             </div>
           </div>
           
@@ -268,15 +270,15 @@ export const BuyPage = () => {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <Badge variant="secondary" className="text-lg px-3 py-1 mb-2">
-                  Cart: {getTotalItems()} items
+                  {t('pages.buy.cartItems', { count: getTotalItems() })}
                 </Badge>
                 <p className="text-sm text-muted-foreground">
-                  Total: ₹{getTotalCartValue()}
+                  {t('buy.total')}: ₹{getTotalCartValue()}
                 </p>
               </div>
               <Button onClick={() => navigate('/view-cart', { state: { cart } })}>
                 <Eye className="h-4 w-4 mr-2" />
-                View All
+                {t('pages.buy.viewAll')}
               </Button>
             </div>
           )}
@@ -293,12 +295,12 @@ export const BuyPage = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{item.item}</CardTitle>
-                    <Badge variant="outline">{item.quantity} kg available</Badge>
+                    <Badge variant="outline">{t('pages.buy.available', { quantity: item.quantity })}</Badge>
                   </div>
                   <div className="flex items-center justify-between mt-2">
                     <p className="text-sm text-muted-foreground">{item.shop_name}</p>
                     <p className="text-sm font-semibold text-primary">
-                      ₹{getItemPrice(item.item)}/{item.item === 'Oil' ? 'liter' : 'kg'}
+                      {t('pages.buy.pricePerUnit', { price: getItemPrice(item.item), unit: item.item === 'Oil' ? 'liter' : 'kg' })}
                     </p>
                   </div>
                 </CardHeader>
@@ -328,7 +330,7 @@ export const BuyPage = () => {
                       </div>
                     ) : (
                       <Button onClick={() => addToCart(item)} className="w-full">
-                        Add to Cart
+                        {t('pages.buy.addToCart')}
                       </Button>
                     )}
                   </div>
@@ -341,9 +343,9 @@ export const BuyPage = () => {
         {stockItems.length === 0 && (
           <div className="text-center py-12">
             <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">No Stock Available</h3>
+            <h3 className="text-xl font-semibold text-foreground mb-2">{t('pages.buy.noStock')}</h3>
             <p className="text-muted-foreground">
-              Currently no ration items are in stock. Please check back later.
+              {t('pages.buy.noStockDesc')}
             </p>
           </div>
         )}
