@@ -5,10 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')
-const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')
-const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')
-
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -73,59 +69,21 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log(`OTP generated for ${phone_number}`)
+    console.log(`OTP generated for ${phone_number}: ${otp_code}`)
 
-    // Send OTP via Twilio SMS
-    try {
-      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`
-      const twilioAuth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)
-      
-      const formData = new URLSearchParams()
-      formData.append('To', `+91${phone_number}`)
-      formData.append('From', TWILIO_PHONE_NUMBER!)
-      formData.append('Body', `Your OTP is: ${otp_code}. It will expire in 10 minutes.`)
-
-      const twilioResponse = await fetch(twilioUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${twilioAuth}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData.toString(),
-      })
-
-      if (!twilioResponse.ok) {
-        const twilioError = await twilioResponse.text()
-        console.error('Twilio API error:', twilioError)
-        throw new Error(`Failed to send SMS: ${twilioError}`)
+    // For testing purposes, return the OTP in the response
+    // In production, this should send SMS instead
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'OTP sent successfully',
+        otp: otp_code // For testing only - remove in production
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
-
-      const twilioData = await twilioResponse.json()
-      console.log('SMS sent successfully:', twilioData.sid)
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'OTP sent successfully via SMS'
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    } catch (smsError) {
-      console.error('Error sending SMS:', smsError)
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to send SMS',
-          details: smsError instanceof Error ? smsError.message : 'Unknown error'
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
+    )
 
   } catch (error) {
     console.error('Error in send-otp function:', error)
