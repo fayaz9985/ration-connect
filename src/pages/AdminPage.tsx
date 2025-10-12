@@ -39,9 +39,72 @@ interface Transaction {
 export const AdminPage = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('stock');
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
+  
+  const [newStock, setNewStock] = useState({
+    item: '',
+    quantity: '',
+    shop_id: '',
+  });
 
-  // Check if user is admin FIRST, before other hooks
-  if (!profile || profile.phone_number !== '9985913379') {
+  // Check if user has admin role from database
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!profile) {
+        setIsAdmin(false);
+        setCheckingAdmin(false);
+        return;
+      }
+
+      try {
+        const { data: userRoles, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', profile.id);
+
+        if (error) {
+          console.error('Error fetching user roles:', error);
+          setIsAdmin(false);
+        } else {
+          const hasAdminRole = userRoles?.some(r => r.role === 'admin');
+          setIsAdmin(hasAdminRole || false);
+        }
+      } catch (error) {
+        console.error('Error checking admin role:', error);
+        setIsAdmin(false);
+      } finally {
+        setCheckingAdmin(false);
+      }
+    };
+
+    checkAdminRole();
+  }, [profile]);
+
+  useEffect(() => {
+    if (activeTab === 'stock') fetchStock();
+    if (activeTab === 'users') fetchProfiles();
+    if (activeTab === 'transactions') fetchTransactions();
+  }, [activeTab]);
+
+  // Show loading state while checking admin status
+  if (checkingAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if not admin
+  if (!profile || !isAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -52,24 +115,6 @@ export const AdminPage = () => {
       </div>
     );
   }
-
-  const [activeTab, setActiveTab] = useState('stock');
-  const [stockItems, setStockItems] = useState<StockItem[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  const [newStock, setNewStock] = useState({
-    item: '',
-    quantity: '',
-    shop_id: '',
-  });
-
-  useEffect(() => {
-    if (activeTab === 'stock') fetchStock();
-    if (activeTab === 'users') fetchProfiles();
-    if (activeTab === 'transactions') fetchTransactions();
-  }, [activeTab]);
 
   const fetchStock = async () => {
     setLoading(true);

@@ -23,6 +23,7 @@ Deno.serve(async (req) => {
 
     const { phone_number } = await req.json()
 
+    // Input validation
     if (!phone_number) {
       return new Response(
         JSON.stringify({ error: 'Phone number is required' }),
@@ -33,12 +34,38 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Validate phone number format (10 digits)
-    if (!/^\d{10}$/.test(phone_number)) {
+    // Validate phone number format (10 digits, starting with 6-9 for Indian numbers)
+    if (!/^[6-9]\d{9}$/.test(phone_number)) {
       return new Response(
-        JSON.stringify({ error: 'Invalid phone number format. Must be 10 digits.' }),
+        JSON.stringify({ error: 'Invalid phone number format. Must be 10 digits starting with 6-9' }),
         { 
           status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Rate limiting check
+    const { data: rateLimitCheck, error: rateLimitError } = await supabase
+      .rpc('increment_rate_limit', {
+        _identifier: phone_number,
+        _action: 'send_otp',
+        _limit: 3,
+        _window_hours: 1
+      })
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError)
+    }
+
+    if (rateLimitCheck === false) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many OTP requests. Please try again after 1 hour.',
+          retry_after: 3600
+        }),
+        { 
+          status: 429, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )

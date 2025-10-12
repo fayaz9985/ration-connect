@@ -19,11 +19,60 @@ Deno.serve(async (req) => {
 
     const { phone_number, otp_code } = await req.json()
 
+    // Input validation
     if (!phone_number || !otp_code) {
       return new Response(
         JSON.stringify({ error: 'Phone number and OTP code are required' }),
         { 
           status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Validate phone number format
+    if (!/^[6-9]\d{9}$/.test(phone_number)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid phone number format' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Validate OTP format (6 digits)
+    if (!/^\d{6}$/.test(otp_code)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid OTP format. Must be 6 digits' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Rate limiting check for verification attempts
+    const { data: rateLimitCheck, error: rateLimitError } = await supabase
+      .rpc('increment_rate_limit', {
+        _identifier: phone_number,
+        _action: 'verify_otp',
+        _limit: 5,
+        _window_hours: 0.25 // 15 minutes
+      })
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError)
+    }
+
+    if (rateLimitCheck === false) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many verification attempts. Please try again after 15 minutes.',
+          retry_after: 900
+        }),
+        { 
+          status: 429, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
