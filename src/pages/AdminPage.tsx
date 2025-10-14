@@ -53,69 +53,7 @@ export const AdminPage = () => {
     shop_id: '',
   });
 
-  // Check if user has admin role from database
-  useEffect(() => {
-    const checkAdminRole = async () => {
-      if (!profile) {
-        setIsAdmin(false);
-        setCheckingAdmin(false);
-        return;
-      }
-
-      try {
-        const { data: userRoles, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', profile.id);
-
-        if (error) {
-          console.error('Error fetching user roles:', error);
-          setIsAdmin(false);
-        } else {
-          const hasAdminRole = userRoles?.some(r => r.role === 'admin');
-          setIsAdmin(hasAdminRole || false);
-        }
-      } catch (error) {
-        console.error('Error checking admin role:', error);
-        setIsAdmin(false);
-      } finally {
-        setCheckingAdmin(false);
-      }
-    };
-
-    checkAdminRole();
-  }, [profile]);
-
-  useEffect(() => {
-    if (activeTab === 'stock') fetchStock();
-    if (activeTab === 'users') fetchProfiles();
-    if (activeTab === 'transactions') fetchTransactions();
-  }, [activeTab]);
-
-  // Show loading state while checking admin status
-  if (checkingAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground">Verifying access...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show access denied if not admin
-  if (!profile || !isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Access Denied</h2>
-          <p className="text-muted-foreground">You don't have permission to access this page.</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Data fetching functions
   const fetchStock = async () => {
     setLoading(true);
     try {
@@ -219,6 +157,67 @@ export const AdminPage = () => {
       setLoading(false);
     }
   };
+
+  // Check if user has admin role from database
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!profile) {
+        setIsAdmin(false);
+        setCheckingAdmin(false);
+        return;
+      }
+
+      try {
+        const { data: userRoles, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', profile.id);
+
+        if (error) {
+          setIsAdmin(false);
+        } else {
+          const hasAdminRole = userRoles?.some(r => r.role === 'admin');
+          setIsAdmin(hasAdminRole || false);
+        }
+      } catch (error) {
+        setIsAdmin(false);
+      } finally {
+        setCheckingAdmin(false);
+      }
+    };
+
+    checkAdminRole();
+  }, [profile]);
+
+  useEffect(() => {
+    if (activeTab === 'stock') fetchStock();
+    if (activeTab === 'users') fetchProfiles();
+    if (activeTab === 'transactions') fetchTransactions();
+  }, [activeTab]);
+
+  // Show loading state while checking admin status
+  if (checkingAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if not admin
+  if (!profile || !isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Access Denied</h2>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddStock = async () => {
     if (!newStock.item || !newStock.quantity || !newStock.shop_id) {
