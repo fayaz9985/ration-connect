@@ -69,7 +69,6 @@ export const DeliveryTrackingPage = () => {
           filter: `profile_id=eq.${profile!.id}`
         },
         (payload) => {
-          console.log('Delivery status updated:', payload);
           fetchDeliveries();
           
           // Show toast notification for status updates
