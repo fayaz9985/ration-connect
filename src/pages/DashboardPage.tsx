@@ -13,64 +13,66 @@ import {
   TrendingUp,
   Clock
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import pdsBanner from '@/assets/pds-banner.jpg';
 
 export const DashboardPage = () => {
   const { profile } = useAuth();
+  const { t } = useTranslation();
 
   const quickActions = [
     {
-      title: 'Buy Items',
-      description: 'Purchase ration items from nearby shops',
+      title: t('pages.dashboard.actions.buy.title'),
+      description: t('pages.dashboard.actions.buy.desc'),
       icon: ShoppingCart,
       path: '/buy',
       color: 'bg-primary/10 hover:bg-primary/20 border-primary/20'
     },
     {
-      title: 'Sell Items',
-      description: 'Sell your surplus ration items',
+      title: t('pages.dashboard.actions.sell.title'),
+      description: t('pages.dashboard.actions.sell.desc'),
       icon: ArrowUpCircle,
       path: '/sell',
       color: 'bg-primary/10 hover:bg-primary/20 border-primary/20'
     },
     {
-      title: 'Get Free Rice',
-      description: 'Claim your monthly government rice quota',
+      title: t('pages.dashboard.actions.getRice.title'),
+      description: t('pages.dashboard.actions.getRice.desc'),
       icon: Package,
       path: '/get-rice',
       color: 'bg-primary/20 hover:bg-primary/30 border-primary/30'
     },
     {
-      title: 'Convert Items',
-      description: 'Exchange items with other users',
+      title: t('pages.dashboard.actions.convert.title'),
+      description: t('pages.dashboard.actions.convert.desc'),
       icon: RefreshCw,
       path: '/convert',
       color: 'bg-accent hover:bg-accent/80 border-border'
     },
     {
-      title: 'Check Stock',
-      description: 'View available stock in shops',
+      title: t('pages.dashboard.actions.checkStock.title'),
+      description: t('pages.dashboard.actions.checkStock.desc'),
       icon: Package,
       path: '/stock',
       color: 'bg-accent hover:bg-accent/80 border-border'
     },
     {
-      title: 'Nearby Shops',
-      description: 'Find ration shops near you with map',
+      title: t('pages.dashboard.actions.nearbyShops.title'),
+      description: t('pages.dashboard.actions.nearbyShops.desc'),
       icon: MapPin,
       path: '/nearby',
       color: 'bg-accent hover:bg-accent/80 border-border'
     },
     {
-      title: 'Profile',
-      description: 'Manage your account settings',
+      title: t('pages.dashboard.actions.profile.title'),
+      description: t('pages.dashboard.actions.profile.desc'),
       icon: User,
       path: '/profile',
       color: 'bg-accent hover:bg-accent/80 border-border'
     },
     {
-      title: 'Admin Panel',
-      description: 'Administrative functions',
+      title: t('pages.dashboard.actions.admin.title'),
+      description: t('pages.dashboard.actions.admin.desc'),
       icon: Settings,
       path: '/admin',
       color: 'bg-muted hover:bg-muted/80 border-border'
@@ -83,13 +85,13 @@ export const DashboardPage = () => {
       <div className="relative h-80 mb-6 overflow-hidden">
         <img 
           src={pdsBanner} 
-          alt="Telangana Government PDS E-Ration Portal" 
+          alt={t('pages.dashboard.alt.banner')} 
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
           <div className="text-center text-white space-y-2">
-            <h1 className="text-5xl font-bold">E-Ration Shop Portal</h1>
-            <p className="text-xl">Government of Telangana - Public Distribution System</p>
+            <h1 className="text-5xl font-bold">{t('pages.dashboard.hero.title')}</h1>
+            <p className="text-xl">{t('pages.dashboard.hero.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -98,20 +100,20 @@ export const DashboardPage = () => {
         {/* Welcome Section */}
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-bold text-foreground">
-            Welcome, {profile?.name}!
+            {t('pages.dashboard.welcome', { name: profile?.name ?? '' })}
           </h2>
           <p className="text-lg text-muted-foreground">
-            Manage your ration needs efficiently with our digital platform.
+            {t('pages.dashboard.manageDesc')}
           </p>
           <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
             <span className="bg-accent px-3 py-1 rounded-full">
-              Card Type: <span className="font-medium capitalize text-primary">{profile?.card_type}</span>
+              {t('pages.dashboard.labels.cardType')}: <span className="font-medium capitalize text-primary">{profile?.card_type}</span>
             </span>
             <span className="bg-accent px-3 py-1 rounded-full">
-              Card Number: <span className="font-medium text-primary">{profile?.ration_card_no}</span>
+              {t('pages.dashboard.labels.cardNumber')}: <span className="font-medium text-primary">{profile?.ration_card_no}</span>
             </span>
             <span className="bg-accent px-3 py-1 rounded-full">
-              Family Members: <span className="font-medium text-primary">{profile?.family_members}</span>
+              {t('pages.dashboard.labels.familyMembers')}: <span className="font-medium text-primary">{profile?.family_members}</span>
             </span>
           </div>
         </div>
@@ -132,7 +134,7 @@ export const DashboardPage = () => {
               <CardContent>
                 <Link to={action.path}>
                   <Button className="w-full">
-                    Go to {action.title}
+                    {t('pages.dashboard.button.goTo', { title: action.title })}
                   </Button>
                 </Link>
               </CardContent>
@@ -146,13 +148,13 @@ export const DashboardPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Recent Activity
+                {t('pages.dashboard.recent.title')}
               </CardTitle>
-              <CardDescription>Your recent ration transactions and activities</CardDescription>
+              <CardDescription>{t('pages.dashboard.recent.desc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground text-center py-8">
-                No recent transactions found. Start by claiming your free rice or buying ration items!
+                {t('pages.dashboard.recent.empty')}
               </p>
             </CardContent>
           </Card>

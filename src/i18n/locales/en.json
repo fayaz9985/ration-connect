@@ -163,6 +163,38 @@
       "purchaseSuccessDesc": "Successfully purchased {count} items. Total: ₹{total}",
       "purchaseFailed": "Purchase Failed",
       "purchaseFailedDesc": "Failed to complete purchase. Please try again."
+    },
+    "dashboard": {
+      "hero": {
+        "title": "E-Ration Shop Portal",
+        "subtitle": "Government of Telangana - Public Distribution System"
+      },
+      "alt": {
+        "banner": "Telangana Government PDS E-Ration Portal"
+      },
+      "welcome": "Welcome, {{name}}!",
+      "manageDesc": "Manage your ration needs efficiently with our digital platform.",
+      "labels": {
+        "cardType": "Card Type",
+        "cardNumber": "Card Number",
+        "familyMembers": "Family Members"
+      },
+      "actions": {
+        "buy": { "title": "Buy Items", "desc": "Purchase ration items from nearby shops" },
+        "sell": { "title": "Sell Items", "desc": "Sell your surplus ration items" },
+        "getRice": { "title": "Get Free Rice", "desc": "Claim your monthly government rice quota" },
+        "convert": { "title": "Convert Items", "desc": "Exchange items with other users" },
+        "checkStock": { "title": "Check Stock", "desc": "View available stock in shops" },
+        "nearbyShops": { "title": "Nearby Shops", "desc": "Find ration shops near you with map" },
+        "profile": { "title": "Profile", "desc": "Manage your account settings" },
+        "admin": { "title": "Admin Panel", "desc": "Administrative functions" }
+      },
+      "button": { "goTo": "Go to {{title}}" },
+      "recent": {
+        "title": "Recent Activity",
+        "desc": "Your recent ration transactions and activities",
+        "empty": "No recent transactions found. Start by claiming your free rice or buying ration items!"
+      }
     }
   }
 }
