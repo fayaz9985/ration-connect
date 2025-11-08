@@ -35,10 +35,15 @@ export const LoginPage = () => {
 
     if (result.success) {
       setOtpSent(true);
-      setGeneratedOtp(result.otp || '');
+      // Only show OTP in development mode
+      if (import.meta.env.DEV && result.otp) {
+        setGeneratedOtp(result.otp);
+      }
       toast({
         title: "OTP Sent",
-        description: `OTP: ${result.otp} (For testing purposes)`,
+        description: import.meta.env.DEV && result.otp 
+          ? `OTP: ${result.otp} (Development mode only)` 
+          : "Please check your phone for the OTP",
       });
     } else {
       toast({
