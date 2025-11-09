@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import riceFieldBg from '@/assets/rice-field-bg.jpg';
 import { 
   Wheat, 
   ShoppingCart, 
@@ -68,8 +69,16 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-primary/10 via-background to-primary/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <div className="relative bg-gradient-to-br from-primary/10 via-background to-primary/5 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src={riceFieldBg} 
+            alt="Rice field background" 
+            className="w-full h-full object-cover opacity-20"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
+        </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
             <div className="flex items-center justify-center mb-6 gap-4">
               <Wheat className="h-16 w-16 text-primary" />
