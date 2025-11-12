@@ -90,14 +90,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const register = async (data: Omit<Profile, 'id'>): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: newProfile, error } = await supabase
-        .from('profiles')
-        .insert([data])
-        .select()
-        .single();
+      const { data: resp, error } = await supabase.functions.invoke('register-profile', {
+        body: data
+      });
 
       if (error) {
         return { success: false, error: error.message };
+      }
+
+      const newProfile = resp?.profile;
+      if (!newProfile) {
+        return { success: false, error: 'Registration failed' };
       }
 
       const profile = {
