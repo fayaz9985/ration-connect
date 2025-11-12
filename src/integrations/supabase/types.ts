@@ -291,6 +291,7 @@ export type Database = {
     }
     Functions: {
       get_current_profile_id: { Args: never; Returns: string }
+      get_current_verified_phone: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
