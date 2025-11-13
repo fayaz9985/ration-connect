@@ -49,15 +49,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const sendOtp = async (phoneNumber: string): Promise<{ success: boolean; error?: string; otp?: string }> => {
     try {
+      const normalized = phoneNumber.trim();
+      if (!/^[6-9]\d{9}$/.test(normalized)) {
+        return { success: false, error: 'Invalid phone number. Enter 10 digits starting 6-9.' };
+      }
+
       const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { phone_number: phoneNumber }
+        body: { phone_number: normalized }
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: (data as any)?.error || (error as any)?.message };
       }
 
-      return { success: true, otp: data.otp };
+      return { success: true, otp: (data as any)?.otp };
     } catch (error) {
       return { success: false, error: 'Failed to send OTP' };
     }
@@ -65,15 +70,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const verifyOtp = async (phoneNumber: string, otpCode: string): Promise<{ success: boolean; error?: string; isRegistered?: boolean }> => {
     try {
+      const normalized = phoneNumber.trim();
+      if (!/^[6-9]\d{9}$/.test(normalized)) {
+        return { success: false, error: 'Invalid phone number. Enter 10 digits starting 6-9.' };
+      }
+      if (!/^\d{6}$/.test(otpCode.trim())) {
+        return { success: false, error: 'Invalid OTP. Enter the 6-digit code.' };
+      }
+
       const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { phone_number: phoneNumber, otp_code: otpCode }
+        body: { phone_number: normalized, otp_code: otpCode.trim() }
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: (data as any)?.error || (error as any)?.message };
       }
 
-      if (data.is_registered && data.profile) {
+      if (data?.is_registered && data?.profile) {
         const profile = {
           ...data.profile,
           card_type: data.profile.card_type as 'apl' | 'bpl' | 'aay' | 'priority'
@@ -82,7 +95,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         localStorage.setItem('rationProfile', JSON.stringify(profile));
       }
 
-      return { success: true, isRegistered: data.is_registered };
+      return { success: true, isRegistered: data?.is_registered };
     } catch (error) {
       return { success: false, error: 'Failed to verify OTP' };
     }
@@ -90,17 +103,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const register = async (data: Omit<Profile, 'id'>): Promise<{ success: boolean; error?: string }> => {
     try {
+      const payload = {
+        ...data,
+        phone_number: data.phone_number.trim(),
+        name: data.name.trim(),
+        ration_card_no: data.ration_card_no.trim(),
+        card_type: (data.card_type as string).toLowerCase() as 'apl' | 'bpl' | 'aay' | 'priority',
+        address: data.address?.toString().trim() || null,
+        family_members: Number(data.family_members),
+      };
+
       const { data: resp, error } = await supabase.functions.invoke('register-profile', {
-        body: data
+        body: payload
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: (resp as any)?.error || (error as any)?.message };
       }
 
-      const newProfile = resp?.profile;
+      const newProfile = (resp as any)?.profile;
       if (!newProfile) {
-        return { success: false, error: 'Registration failed' };
+        return { success: false, error: (resp as any)?.error || 'Registration failed' };
       }
 
       const profile = {
