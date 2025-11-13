@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useState } from 'react';
 import { 
   Home, 
   ShoppingCart, 
@@ -16,13 +18,15 @@ import {
   LogOut,
   History,
   Truck,
-  Wheat
+  Wheat,
+  Menu
 } from 'lucide-react';
 
 export const Navbar = () => {
   const { profile, logout } = useAuth();
   const location = useLocation();
   const { t } = useTranslation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isAdmin = profile?.phone_number === '9985913379';
 
@@ -99,7 +103,67 @@ export const Navbar = () => {
             </Button>
           </div>
 
-          {/* Mobile menu would go here */}
+          {/* Mobile menu */}
+          <div className="flex md:hidden items-center gap-2">
+            <ThemeToggle />
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72">
+                <div className="flex flex-col gap-4 mt-8">
+                  {navItems.map(({ path, label, icon: Icon }) => (
+                    <Link
+                      key={path}
+                      to={path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-base font-medium transition-colors ${
+                        location.pathname === path
+                          ? 'text-primary bg-primary/10'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{label}</span>
+                    </Link>
+                  ))}
+                  
+                  {profile?.phone_number === '9985913379' && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-base font-medium transition-colors ${
+                        location.pathname === '/admin'
+                          ? 'text-primary bg-primary/10'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <Settings className="h-5 w-5" />
+                      <span>{t('nav.admin')}</span>
+                    </Link>
+                  )}
+
+                  <div className="border-t border-border pt-4 mt-2">
+                    <LanguageSwitcher />
+                  </div>
+
+                  <Button 
+                    variant="ghost" 
+                    className="justify-start px-4" 
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="h-5 w-5 mr-3" />
+                    {t('common.logout')}
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
     </nav>
