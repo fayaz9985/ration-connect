@@ -43,12 +43,12 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Rate limiting check
+    // Rate limiting check - increased to 10 attempts per hour for better UX
     const { data: rateLimitCheck, error: rateLimitError } = await supabase
       .rpc('increment_rate_limit', {
         _identifier: phone_number,
         _action: 'send_otp',
-        _limit: 3,
+        _limit: 10,
         _window_hours: 1
       })
 
@@ -57,10 +57,22 @@ Deno.serve(async (req) => {
     }
 
     if (rateLimitCheck === false) {
+      // Get the rate limit record to calculate exact retry time
+      const { data: rateLimit } = await supabase
+        .from('rate_limits')
+        .select('window_start')
+        .eq('identifier', phone_number)
+        .eq('action', 'send_otp')
+        .single()
+
+      const retryAfterMinutes = rateLimit 
+        ? Math.ceil((new Date(rateLimit.window_start).getTime() + 3600000 - Date.now()) / 60000)
+        : 60
+
       return new Response(
         JSON.stringify({ 
-          error: 'Too many OTP requests. Please try again after 1 hour.',
-          retry_after: 3600
+          error: `Too many OTP requests. Please try again after ${retryAfterMinutes} minutes.`,
+          retry_after: retryAfterMinutes * 60
         }),
         { 
           status: 429, 
