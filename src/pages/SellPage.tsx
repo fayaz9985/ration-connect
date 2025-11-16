@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,19 +9,53 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowUpCircle, IndianRupee } from 'lucide-react';
 
+interface Shop {
+  id: string;
+  shop_name: string;
+}
+
 export const SellPage = () => {
   const [quantity, setQuantity] = useState('');
   const [selectedShop, setSelectedShop] = useState('');
   const [loading, setLoading] = useState(false);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [shopsLoading, setShopsLoading] = useState(true);
   
   const { profile } = useAuth();
   const { toast } = useToast();
 
-  const shops = [
-    { id: '1', name: 'Central Ration Shop' },
-    { id: '2', name: 'North District Shop' },
-    { id: '3', name: 'South Central Shop' },
-  ];
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('shops')
+          .select('id, shop_name');
+
+        if (error) {
+          console.error('Error fetching shops:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load shops. Please refresh the page.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setShops(data || []);
+      } catch (error) {
+        console.error('Error fetching shops:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load shops. Please refresh the page.",
+          variant: "destructive",
+        });
+      } finally {
+        setShopsLoading(false);
+      }
+    };
+
+    fetchShops();
+  }, [toast]);
 
   const ricePrice = 20; // Price per kg
 
@@ -35,8 +69,17 @@ export const SellPage = () => {
       return;
     }
 
+    if (!profile) {
+      toast({
+        title: "Authentication Error",
+        description: "Please log in to sell rice",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const quantityNum = parseInt(quantity);
-    if (quantityNum <= 0) {
+    if (quantityNum <= 0 || isNaN(quantityNum)) {
       toast({
         title: "Invalid Quantity",
         description: "Please enter a valid quantity",
@@ -52,7 +95,7 @@ export const SellPage = () => {
       const { error: transactionError } = await supabase
         .from('transactions')
         .insert([{
-          profile_id: profile!.id,
+          profile_id: profile.id,
           shop_id: selectedShop,
           item: 'Rice',
           quantity: quantityNum,
@@ -101,11 +144,12 @@ export const SellPage = () => {
 
       setQuantity('');
       setSelectedShop('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sell error:', error);
+      const errorMessage = error?.message || error?.error_description || 'Unknown error occurred';
       toast({
         title: "Transaction Failed",
-        description: "Failed to sell rice. Please try again.",
+        description: errorMessage || "Failed to sell rice. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -153,14 +197,14 @@ export const SellPage = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="shop">Preferred Shop *</Label>
-                <Select onValueChange={setSelectedShop}>
+                <Select onValueChange={setSelectedShop} disabled={shopsLoading}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a ration shop" />
+                    <SelectValue placeholder={shopsLoading ? "Loading shops..." : "Select a ration shop"} />
                   </SelectTrigger>
                   <SelectContent>
                     {shops.map((shop) => (
                       <SelectItem key={shop.id} value={shop.id}>
-                        {shop.name}
+                        {shop.shop_name}
                       </SelectItem>
                     ))}
                   </SelectContent>
