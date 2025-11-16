@@ -2712,9 +2712,6 @@ const LanguageSwitcher = () => {
     </div>
   );
 };
-
-export default ProjectDocumentation;
-
       {/* Print Styles */}
       <style>{`
         @media print {
@@ -2731,8 +2728,6 @@ export default ProjectDocumentation;
           }
         }
       `}</style>
-    </div>
-  );
-};
+    
 
 export default ProjectDocumentation;
