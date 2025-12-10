@@ -9,7 +9,6 @@ import { useState } from 'react';
 import { 
   Home, 
   ShoppingCart, 
-  ArrowUpCircle, 
   RefreshCw, 
   Package, 
   MapPin, 
@@ -33,9 +32,8 @@ export const Navbar = () => {
   const allNavItems = [
     { path: '/dashboard', label: t('nav.dashboard'), icon: Home, adminOnly: false, userOnly: true },
     { path: '/buy', label: t('nav.buy'), icon: ShoppingCart, adminOnly: false, userOnly: true },
-    { path: '/sell', label: t('nav.sell'), icon: ArrowUpCircle, adminOnly: false, userOnly: true },
     { path: '/get-rice', label: t('nav.getRice'), icon: Package, adminOnly: false, userOnly: true },
-    { path: '/convert', label: t('nav.convert'), icon: RefreshCw, adminOnly: false, userOnly: true },
+    { path: '/sell-convert', label: t('nav.sellConvert'), icon: RefreshCw, adminOnly: false, userOnly: true },
     { path: '/track-delivery', label: t('nav.tracking'), icon: Truck, adminOnly: false, userOnly: true },
     { path: '/stock', label: t('nav.stock'), icon: Package, adminOnly: false, userOnly: false },
     { path: '/nearby', label: t('nav.nearbyShops'), icon: MapPin, adminOnly: false, userOnly: false },
