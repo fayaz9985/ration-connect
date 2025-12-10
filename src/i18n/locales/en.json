@@ -21,9 +21,8 @@
   "nav": {
     "dashboard": "Dashboard",
     "buy": "Buy",
-    "sell": "Sell",
-    "convert": "Convert",
     "getRice": "Get Rice",
+    "sellConvert": "Sell/Convert",
     "profile": "Profile",
     "admin": "Admin",
     "stock": "Stock",

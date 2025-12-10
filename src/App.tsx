@@ -13,9 +13,8 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { BuyPage } from "./pages/BuyPage";
-import { SellPage } from "./pages/SellPage";
 import { GetRicePage } from "./pages/GetRicePage";
-import { ConvertPage } from "./pages/ConvertPage";
+import { SellConvertPage } from "./pages/SellConvertPage";
 import { StockPage } from "./pages/StockPage";
 import { NearbyShopsPage } from "./pages/NearbyShopsPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -44,9 +43,8 @@ const App = () => (
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/buy" element={<BuyPage />} />
-            <Route path="/sell" element={<SellPage />} />
             <Route path="/get-rice" element={<GetRicePage />} />
-            <Route path="/convert" element={<ConvertPage />} />
+            <Route path="/sell-convert" element={<SellConvertPage />} />
             <Route path="/stock" element={<StockPage />} />
             <Route path="/nearby" element={<NearbyShopsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
