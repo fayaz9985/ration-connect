@@ -6,44 +6,67 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Package2, Calendar, Users, CheckCircle } from 'lucide-react';
+import { Package2, Calendar, Users, CheckCircle, AlertCircle } from 'lucide-react';
+
+interface QuotaUsage {
+  sold: number;
+  converted: number;
+  claimed: number;
+}
 
 export const GetRicePage = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
-  const [hasClaimedThisMonth, setHasClaimedThisMonth] = useState(false);
+  const [quotaUsage, setQuotaUsage] = useState<QuotaUsage>({ sold: 0, converted: 0, claimed: 0 });
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
 
+  const quotaPerMember = 6;
+  const monthlyQuota = profile ? profile.family_members * quotaPerMember : 0;
+  const usedQuota = quotaUsage.sold + quotaUsage.converted + quotaUsage.claimed;
+  const remainingQuota = Math.max(0, monthlyQuota - usedQuota);
+  const hasSoldOrConverted = quotaUsage.sold > 0 || quotaUsage.converted > 0;
+  const hasClaimedRice = quotaUsage.claimed > 0;
+
   useEffect(() => {
-    checkMonthlyRiceClaim();
+    checkQuotaUsage();
   }, [profile]);
 
-  const checkMonthlyRiceClaim = async () => {
-    if (!profile) return;
+  const checkQuotaUsage = async () => {
+    if (!profile) {
+      setLoading(false);
+      return;
+    }
     
     try {
       const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth();
-      
-      // First day of current month
-      const startDate = new Date(currentYear, currentMonth, 1).toISOString();
-      // First day of next month
-      const endDate = new Date(currentYear, currentMonth + 1, 1).toISOString();
-      
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
       const { data, error } = await supabase
         .from('rice_claims')
-        .select('id')
+        .select('quantity_kg, status')
         .eq('profile_id', profile.id)
-        .gte('claimed_at', startDate)
-        .lt('claimed_at', endDate);
+        .gte('claimed_at', startOfMonth.toISOString())
+        .lte('claimed_at', endOfMonth.toISOString());
 
       if (error) throw error;
+
+      const usage: QuotaUsage = { sold: 0, converted: 0, claimed: 0 };
       
-      setHasClaimedThisMonth(data && data.length > 0);
+      data?.forEach((claim) => {
+        if (claim.status === 'sold') {
+          usage.sold += claim.quantity_kg;
+        } else if (claim.status === 'converted') {
+          usage.converted += claim.quantity_kg;
+        } else {
+          usage.claimed += claim.quantity_kg;
+        }
+      });
+
+      setQuotaUsage(usage);
     } catch (error) {
-      console.error('Error checking rice claim:', error);
+      console.error('Error checking quota usage:', error);
       toast({
         title: "Error",
         description: "Failed to check rice claim status",
@@ -54,40 +77,34 @@ export const GetRicePage = () => {
     }
   };
 
-  const calculateQuota = () => {
-    return (profile?.family_members || 4) * 6; // 6kg per family member
-  };
-
   const claimRice = async (deliveryMethod: 'pay_now' | 'cash_on_delivery') => {
     if (!profile) return;
     
     setClaiming(true);
     try {
-      const quantity = calculateQuota();
-      
       const { error } = await supabase
         .from('rice_claims')
         .insert({
           profile_id: profile.id,
-          quantity_kg: quantity,
+          quantity_kg: remainingQuota,
           delivery_method: deliveryMethod,
           status: 'out_for_delivery'
         });
 
       if (error) throw error;
       
-      setHasClaimedThisMonth(true);
+      setQuotaUsage(prev => ({ ...prev, claimed: prev.claimed + remainingQuota }));
       
       if (deliveryMethod === 'pay_now') {
         toast({
           title: "Payment Confirmed! 🍚",
-          description: "Your rice is out for delivery. It will arrive within 0.5–2 days depending on distance.",
+          description: `Your ${remainingQuota} kg rice is out for delivery. It will arrive within 0.5–2 days.`,
           duration: 5000
         });
       } else {
         toast({
           title: "Order Confirmed! 📦",
-          description: "Your rice is scheduled for delivery. Please pay at the time of delivery.",
+          description: `Your ${remainingQuota} kg rice is scheduled for delivery. Please pay at the time of delivery.`,
           duration: 5000
         });
       }
@@ -129,8 +146,6 @@ export const GetRicePage = () => {
     );
   }
 
-  const quota = calculateQuota();
-
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -150,61 +165,95 @@ export const GetRicePage = () => {
             <CardDescription>Based on your family size</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-accent/50 rounded-lg">
-                <Users className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <div className="text-2xl font-bold text-foreground">{profile.family_members}</div>
-                <div className="text-sm text-muted-foreground">Family Members</div>
+                <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <div className="text-xl font-bold text-foreground">{profile.family_members}</div>
+                <div className="text-xs text-muted-foreground">Family Members</div>
               </div>
               
               <div className="text-center p-4 bg-accent/50 rounded-lg">
-                <Package2 className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <div className="text-2xl font-bold text-foreground">{quota} KG</div>
-                <div className="text-sm text-muted-foreground">Monthly Quota</div>
+                <Package2 className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <div className="text-xl font-bold text-foreground">{monthlyQuota} kg</div>
+                <div className="text-xs text-muted-foreground">Total Quota</div>
+              </div>
+              
+              <div className="text-center p-4 bg-primary/10 rounded-lg">
+                <CheckCircle className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <div className="text-xl font-bold text-primary">{remainingQuota} kg</div>
+                <div className="text-xs text-muted-foreground">Available to Claim</div>
               </div>
               
               <div className="text-center p-4 bg-accent/50 rounded-lg">
-                <Calendar className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <div className="text-2xl font-bold text-foreground">Once</div>
-                <div className="text-sm text-muted-foreground">Per Month</div>
+                <Calendar className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <div className="text-xl font-bold text-foreground">Once</div>
+                <div className="text-xs text-muted-foreground">Per Month</div>
               </div>
             </div>
-            
-            <Alert className="border-primary/20 bg-primary/5">
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
-                You are entitled to <strong>{quota}kg</strong> of free rice this month 
-                ({profile.family_members} family members × 6kg each)
-              </AlertDescription>
-            </Alert>
+
+            {(quotaUsage.sold > 0 || quotaUsage.converted > 0) && (
+              <Alert className="border-muted">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  This month: Sold {quotaUsage.sold} kg, Converted {quotaUsage.converted} kg
+                  {quotaUsage.claimed > 0 && `, Claimed ${quotaUsage.claimed} kg`}
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
 
         {/* Claim Status */}
-        {hasClaimedThisMonth ? (
+        {hasClaimedRice && remainingQuota === 0 ? (
           <Card className="border-primary/20 bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-primary">
                 <CheckCircle className="h-5 w-5" />
-                Already Claimed This Month
+                Quota Fully Used This Month
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-foreground">
-                You have already claimed your rice quota for this month. 
-                You can claim again next month.
+                You have claimed all {quotaUsage.claimed} kg of your rice quota for this month. 
+                Your quota will reset next month.
               </p>
             </CardContent>
           </Card>
-        ) : (
+        ) : hasSoldOrConverted && remainingQuota === 0 ? (
+          <Card className="border-muted">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                No Rice Available to Claim
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-foreground">
+                You have sold or converted your entire quota this month. 
+                No rice is available for delivery. Your quota will reset next month.
+              </p>
+            </CardContent>
+          </Card>
+        ) : remainingQuota > 0 ? (
           <Card>
             <CardHeader>
               <CardTitle>Claim Your Rice</CardTitle>
               <CardDescription>
-                Choose your preferred delivery method
+                {hasSoldOrConverted 
+                  ? `You have ${remainingQuota} kg remaining after selling/converting. Claim it now!`
+                  : 'Choose your preferred delivery method'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <Alert className="border-primary/20 bg-primary/5">
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>
+                  You can claim <strong>{remainingQuota} kg</strong> of rice
+                  {hasSoldOrConverted && ' (remaining after sell/convert)'}
+                </AlertDescription>
+              </Alert>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Pay Now Button */}
                 <AlertDialog>
@@ -222,7 +271,7 @@ export const GetRicePage = () => {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Do you want to confirm your payment for {quota}kg rice delivery?
+                        Do you want to confirm your payment for {remainingQuota} kg rice delivery?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -254,7 +303,7 @@ export const GetRicePage = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {/* Information */}
         <Card>
@@ -269,7 +318,10 @@ export const GetRicePage = () => {
               • Each family member is entitled to 6kg of rice per month
             </div>
             <div className="text-sm text-muted-foreground">
-              • Rice can only be claimed once per calendar month
+              • You can split your quota: claim some as rice, sell some, or convert some
+            </div>
+            <div className="text-sm text-muted-foreground">
+              • Once you claim rice for delivery, the remaining quota cannot be sold/converted
             </div>
             <div className="text-sm text-muted-foreground">
               • Delivery charges may apply based on your location
