@@ -4,12 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowUpCircle, RefreshCw, ArrowRight, IndianRupee, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowUpCircle, RefreshCw, ArrowRight, IndianRupee, AlertCircle, CheckCircle2, Package2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Shop {
@@ -24,21 +23,28 @@ interface ConversionRate {
   description: string;
 }
 
+interface QuotaUsage {
+  sold: number;
+  converted: number;
+  claimed: number;
+}
+
 export const SellConvertPage = () => {
-  const [quantity, setQuantity] = useState('');
+  const [sellQuantity, setSellQuantity] = useState('');
+  const [convertQuantity, setConvertQuantity] = useState('');
   const [selectedShop, setSelectedShop] = useState('');
   const [convertTo, setConvertTo] = useState('');
   const [loading, setLoading] = useState(false);
   const [shops, setShops] = useState<Shop[]>([]);
   const [shopsLoading, setShopsLoading] = useState(true);
-  const [hasClaimedThisMonth, setHasClaimedThisMonth] = useState<boolean | null>(null);
-  const [checkingClaim, setCheckingClaim] = useState(true);
+  const [quotaUsage, setQuotaUsage] = useState<QuotaUsage>({ sold: 0, converted: 0, claimed: 0 });
+  const [checkingQuota, setCheckingQuota] = useState(true);
   
   const { profile } = useAuth();
   const { toast } = useToast();
 
   const ricePrice = 20;
-  const quotaPerMember = 6; // 6 kg per family member
+  const quotaPerMember = 6;
 
   const conversionRates: ConversionRate[] = [
     { from: 'Rice', to: 'Wheat', rate: 0.8, description: '1 kg Rice = 0.8 kg Wheat' },
@@ -47,6 +53,9 @@ export const SellConvertPage = () => {
   ];
 
   const monthlyQuota = profile ? profile.family_members * quotaPerMember : 0;
+  const usedQuota = quotaUsage.sold + quotaUsage.converted + quotaUsage.claimed;
+  const remainingQuota = Math.max(0, monthlyQuota - usedQuota);
+  const hasClaimedRice = quotaUsage.claimed > 0;
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -72,9 +81,9 @@ export const SellConvertPage = () => {
   }, []);
 
   useEffect(() => {
-    const checkMonthlyRiceClaim = async () => {
+    const checkQuotaUsage = async () => {
       if (!profile) {
-        setCheckingClaim(false);
+        setCheckingQuota(false);
         return;
       }
 
@@ -85,32 +94,42 @@ export const SellConvertPage = () => {
 
         const { data, error } = await supabase
           .from('rice_claims')
-          .select('id')
+          .select('quantity_kg, status')
           .eq('profile_id', profile.id)
           .gte('claimed_at', startOfMonth.toISOString())
-          .lte('claimed_at', endOfMonth.toISOString())
-          .limit(1);
+          .lte('claimed_at', endOfMonth.toISOString());
 
         if (error) {
-          console.error('Error checking rice claim:', error);
-          setHasClaimedThisMonth(false);
+          console.error('Error checking quota usage:', error);
           return;
         }
 
-        setHasClaimedThisMonth(data && data.length > 0);
+        const usage: QuotaUsage = { sold: 0, converted: 0, claimed: 0 };
+        
+        data?.forEach((claim) => {
+          if (claim.status === 'sold') {
+            usage.sold += claim.quantity_kg;
+          } else if (claim.status === 'converted') {
+            usage.converted += claim.quantity_kg;
+          } else {
+            // All other statuses (confirmed, out_for_delivery, delivered) count as claimed
+            usage.claimed += claim.quantity_kg;
+          }
+        });
+
+        setQuotaUsage(usage);
       } catch (error) {
-        console.error('Error checking rice claim:', error);
-        setHasClaimedThisMonth(false);
+        console.error('Error checking quota usage:', error);
       } finally {
-        setCheckingClaim(false);
+        setCheckingQuota(false);
       }
     };
 
-    checkMonthlyRiceClaim();
+    checkQuotaUsage();
   }, [profile]);
 
   const handleSellRice = async () => {
-    if (!quantity || !selectedShop) {
+    if (!sellQuantity || !selectedShop) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -128,7 +147,7 @@ export const SellConvertPage = () => {
       return;
     }
 
-    const quantityNum = parseInt(quantity);
+    const quantityNum = parseInt(sellQuantity);
     if (quantityNum <= 0 || isNaN(quantityNum)) {
       toast({
         title: "Invalid Quantity",
@@ -138,10 +157,10 @@ export const SellConvertPage = () => {
       return;
     }
 
-    if (quantityNum > monthlyQuota) {
+    if (quantityNum > remainingQuota) {
       toast({
-        title: "Exceeds Quota",
-        description: `You can only sell up to ${monthlyQuota} kg (your monthly quota)`,
+        title: "Exceeds Available Quota",
+        description: `You can only sell up to ${remainingQuota} kg (remaining quota)`,
         variant: "destructive",
       });
       return;
@@ -192,7 +211,7 @@ export const SellConvertPage = () => {
         if (insertError) throw insertError;
       }
 
-      // Mark as claimed by creating a rice_claim record with status 'sold'
+      // Record the sold rice in rice_claims
       const { error: claimError } = await supabase
         .from('rice_claims')
         .insert([{
@@ -211,9 +230,9 @@ export const SellConvertPage = () => {
         description: `Your account is credited with ₹${totalAmount} for selling ${quantityNum} kg Rice.`,
       });
 
-      setQuantity('');
+      setSellQuantity('');
       setSelectedShop('');
-      setHasClaimedThisMonth(true);
+      setQuotaUsage(prev => ({ ...prev, sold: prev.sold + quantityNum }));
     } catch (error: any) {
       console.error('Sell error:', error);
       toast({
@@ -227,7 +246,7 @@ export const SellConvertPage = () => {
   };
 
   const handleConvert = async () => {
-    if (!quantity || !convertTo) {
+    if (!convertQuantity || !convertTo) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -245,7 +264,7 @@ export const SellConvertPage = () => {
       return;
     }
 
-    const quantityNum = parseInt(quantity);
+    const quantityNum = parseInt(convertQuantity);
     if (quantityNum <= 0) {
       toast({
         title: "Invalid Quantity",
@@ -255,10 +274,10 @@ export const SellConvertPage = () => {
       return;
     }
 
-    if (quantityNum > monthlyQuota) {
+    if (quantityNum > remainingQuota) {
       toast({
-        title: "Exceeds Quota",
-        description: `You can only convert up to ${monthlyQuota} kg (your monthly quota)`,
+        title: "Exceeds Available Quota",
+        description: `You can only convert up to ${remainingQuota} kg (remaining quota)`,
         variant: "destructive",
       });
       return;
@@ -306,7 +325,7 @@ export const SellConvertPage = () => {
 
       if (transactionError) throw transactionError;
 
-      // Mark as claimed by creating a rice_claim record with status 'converted'
+      // Record the converted rice in rice_claims
       const { error: claimError } = await supabase
         .from('rice_claims')
         .insert([{
@@ -323,9 +342,9 @@ export const SellConvertPage = () => {
         description: `Your ${quantityNum}kg rice is being converted to ${convertedQuantity}${convertTo === 'Oil' ? 'L' : 'kg'} ${convertTo}. Delivery within 1–3 days.`,
       });
 
-      setQuantity('');
+      setConvertQuantity('');
       setConvertTo('');
-      setHasClaimedThisMonth(true);
+      setQuotaUsage(prev => ({ ...prev, converted: prev.converted + quantityNum }));
     } catch (error: any) {
       console.error('Convert error:', error);
       toast({
@@ -339,12 +358,12 @@ export const SellConvertPage = () => {
   };
 
   const calculateAmount = () => {
-    const quantityNum = parseInt(quantity) || 0;
+    const quantityNum = parseInt(sellQuantity) || 0;
     return quantityNum * ricePrice;
   };
 
   const getConvertedQuantity = () => {
-    const quantityNum = parseInt(quantity) || 0;
+    const quantityNum = parseInt(convertQuantity) || 0;
     const conversionRate = conversionRates.find(rate => rate.to === convertTo);
     if (!conversionRate) return 0;
     return Math.floor(quantityNum * conversionRate.rate * 100) / 100;
@@ -354,7 +373,7 @@ export const SellConvertPage = () => {
     return conversionRates.find(rate => rate.to === convertTo);
   };
 
-  if (checkingClaim) {
+  if (checkingQuota) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Checking quota status...</div>
@@ -385,265 +404,210 @@ export const SellConvertPage = () => {
           <RefreshCw className="h-8 w-8 text-primary mr-3" />
           <div>
             <h1 className="text-3xl font-bold text-foreground">Sell or Convert Rice</h1>
-            <p className="text-muted-foreground">Choose to sell or convert your monthly quota rice</p>
+            <p className="text-muted-foreground">Split your quota: sell some, convert some</p>
           </div>
         </div>
 
         {/* Quota Info Card */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Your Monthly Rice Quota</p>
-                <p className="text-2xl font-bold text-primary">{monthlyQuota} kg</p>
-                <p className="text-xs text-muted-foreground">
-                  ({profile.family_members} family members × {quotaPerMember} kg)
-                </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <p className="text-xs text-muted-foreground">Total Quota</p>
+                <p className="text-xl font-bold text-primary">{monthlyQuota} kg</p>
               </div>
-              <div className={`px-4 py-2 rounded-lg ${hasClaimedThisMonth ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
-                {hasClaimedThisMonth ? (
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5" />
-                    <span className="font-medium">Already Used</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span className="font-medium">Available</span>
-                  </div>
-                )}
+              <div className="text-center p-3 bg-primary/10 rounded-lg">
+                <p className="text-xs text-muted-foreground">Remaining</p>
+                <p className="text-xl font-bold text-primary">{remainingQuota} kg</p>
+              </div>
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <p className="text-xs text-muted-foreground">Sold</p>
+                <p className="text-xl font-bold text-foreground">{quotaUsage.sold} kg</p>
+              </div>
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <p className="text-xs text-muted-foreground">Converted</p>
+                <p className="text-xl font-bold text-foreground">{quotaUsage.converted} kg</p>
               </div>
             </div>
+            {quotaUsage.claimed > 0 && (
+              <div className="mt-4 p-3 bg-destructive/10 rounded-lg text-center">
+                <p className="text-sm text-destructive">
+                  <AlertCircle className="inline h-4 w-4 mr-1" />
+                  You have already claimed {quotaUsage.claimed} kg as rice delivery
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {hasClaimedThisMonth ? (
+        {hasClaimedRice ? (
           <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Quota Already Used This Month</AlertTitle>
+            <AlertTitle>Cannot Sell or Convert</AlertTitle>
             <AlertDescription>
-              You have already claimed, sold, or converted your rice quota for this month. 
-              You can sell or convert rice again next month when your quota resets.
+              You have already claimed {quotaUsage.claimed} kg rice for delivery this month. 
+              Once you claim rice for delivery, you cannot sell or convert it. 
+              You can use this feature next month before claiming your quota.
+            </AlertDescription>
+          </Alert>
+        ) : remainingQuota === 0 ? (
+          <Alert>
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertTitle>Quota Fully Used</AlertTitle>
+            <AlertDescription>
+              You have used your entire monthly quota. 
+              Sold: {quotaUsage.sold} kg, Converted: {quotaUsage.converted} kg.
+              Your quota will reset next month.
             </AlertDescription>
           </Alert>
         ) : (
-          <Tabs defaultValue="sell" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="sell" className="flex items-center gap-2">
-                <ArrowUpCircle className="h-4 w-4" />
-                Sell Rice
-              </TabsTrigger>
-              <TabsTrigger value="convert" className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
-                Convert Rice
-              </TabsTrigger>
-            </TabsList>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Sell Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ArrowUpCircle className="h-5 w-5 text-primary" />
+                  Sell Rice for Money
+                </CardTitle>
+                <CardDescription>
+                  Get ₹{ricePrice}/kg for your quota rice
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sell-quantity">Quantity (kg)</Label>
+                  <Input
+                    id="sell-quantity"
+                    type="number"
+                    placeholder={`Max ${remainingQuota} kg`}
+                    value={sellQuantity}
+                    onChange={(e) => setSellQuantity(e.target.value)}
+                    min="1"
+                    max={remainingQuota}
+                  />
+                </div>
 
-            <TabsContent value="sell">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Sell Your Quota Rice</CardTitle>
-                    <CardDescription>
-                      Sell up to {monthlyQuota} kg of your monthly quota
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="sell-quantity">Quantity (kg) *</Label>
-                      <Input
-                        id="sell-quantity"
-                        type="number"
-                        placeholder={`Enter quantity (max ${monthlyQuota} kg)`}
-                        value={quantity}
-                        onChange={(e) => setQuantity(e.target.value)}
-                        min="1"
-                        max={monthlyQuota}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Maximum: {monthlyQuota} kg (your monthly quota)
-                      </p>
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="shop">Preferred Shop</Label>
+                  <Select onValueChange={setSelectedShop} disabled={shopsLoading}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={shopsLoading ? "Loading..." : "Select shop"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shops.map((shop) => (
+                        <SelectItem key={shop.id} value={shop.id}>
+                          {shop.shop_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="shop">Preferred Shop *</Label>
-                      <Select onValueChange={setSelectedShop} disabled={shopsLoading}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={shopsLoading ? "Loading shops..." : "Select a ration shop"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {shops.map((shop) => (
-                            <SelectItem key={shop.id} value={shop.id}>
-                              {shop.shop_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {quantity && (
-                      <div className="p-4 bg-muted/50 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">Total Amount:</span>
-                          <div className="flex items-center">
-                            <IndianRupee className="h-4 w-4 mr-1" />
-                            <span className="text-lg font-bold">{calculateAmount()}</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Rate: ₹{ricePrice} per kg
-                        </p>
+                {sellQuantity && parseInt(sellQuantity) > 0 && (
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">You'll receive:</span>
+                      <div className="flex items-center font-bold text-primary">
+                        <IndianRupee className="h-4 w-4" />
+                        {calculateAmount()}
                       </div>
-                    )}
-
-                    <Button 
-                      onClick={handleSellRice} 
-                      disabled={loading}
-                      className="w-full"
-                    >
-                      {loading ? 'Processing...' : 'Sell Rice'}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Selling Information</CardTitle>
-                    <CardDescription>
-                      Important details about rice selling
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <span className="font-medium">Current Rate:</span>
-                      <span className="font-bold text-primary">₹{ricePrice}/kg</span>
                     </div>
+                  </div>
+                )}
 
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">Terms & Conditions:</h4>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        <li>• Only monthly quota rice can be sold</li>
-                        <li>• Once sold, quota is marked as used for this month</li>
-                        <li>• Payment credited within 3-5 working days</li>
-                        <li>• Selling is subject to government policies</li>
-                      </ul>
+                <Button 
+                  onClick={handleSellRice} 
+                  disabled={loading || !sellQuantity || !selectedShop}
+                  className="w-full"
+                >
+                  {loading ? 'Processing...' : 'Sell Rice'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Convert Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5 text-primary" />
+                  Convert to Groceries
+                </CardTitle>
+                <CardDescription>
+                  Exchange rice for wheat, sugar, or oil
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="convert-quantity">Quantity (kg)</Label>
+                  <Input
+                    id="convert-quantity"
+                    type="number"
+                    placeholder={`Max ${remainingQuota} kg`}
+                    value={convertQuantity}
+                    onChange={(e) => setConvertQuantity(e.target.value)}
+                    min="1"
+                    max={remainingQuota}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="convert-to">Convert To</Label>
+                  <Select onValueChange={setConvertTo}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select item" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {conversionRates.map((rate) => (
+                        <SelectItem key={rate.to} value={rate.to}>
+                          {rate.to} ({rate.description})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {convertQuantity && convertTo && parseInt(convertQuantity) > 0 && (
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="font-medium">{convertQuantity} kg Rice</span>
+                      <ArrowRight className="h-4 w-4" />
+                      <span className="font-bold text-primary">
+                        {getConvertedQuantity()} {convertTo === 'Oil' ? 'L' : 'kg'} {convertTo}
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+                  </div>
+                )}
 
-            <TabsContent value="convert">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Convert Your Quota Rice</CardTitle>
-                    <CardDescription>
-                      Convert up to {monthlyQuota} kg into other items
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="convert-quantity">Rice Quantity (kg) *</Label>
-                      <Input
-                        id="convert-quantity"
-                        type="number"
-                        placeholder={`Enter quantity (max ${monthlyQuota} kg)`}
-                        value={quantity}
-                        onChange={(e) => setQuantity(e.target.value)}
-                        min="1"
-                        max={monthlyQuota}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Maximum: {monthlyQuota} kg (your monthly quota)
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="convert-to">Convert To *</Label>
-                      <Select onValueChange={setConvertTo}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select item to convert to" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {conversionRates.map((rate) => (
-                            <SelectItem key={rate.to} value={rate.to}>
-                              {rate.to}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {quantity && convertTo && (
-                      <div className="p-4 bg-muted/50 rounded-lg">
-                        <div className="flex items-center justify-center space-x-4 mb-3">
-                          <div className="text-center">
-                            <p className="text-sm text-muted-foreground">Rice</p>
-                            <p className="text-lg font-bold">{quantity} kg</p>
-                          </div>
-                          <ArrowRight className="h-6 w-6 text-primary" />
-                          <div className="text-center">
-                            <p className="text-sm text-muted-foreground">{convertTo}</p>
-                            <p className="text-lg font-bold">
-                              {getConvertedQuantity()} {convertTo === 'Oil' ? 'L' : 'kg'}
-                            </p>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground text-center">
-                          {getSelectedConversionRate()?.description}
-                        </p>
-                      </div>
-                    )}
-
-                    <Button 
-                      onClick={handleConvert} 
-                      disabled={loading}
-                      className="w-full"
-                    >
-                      {loading ? 'Converting...' : 'Convert Items'}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Conversion Rates</CardTitle>
-                    <CardDescription>
-                      Government approved conversion rates
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {conversionRates.map((rate, index) => (
-                      <div 
-                        key={index} 
-                        className={`p-4 rounded-lg border ${
-                          convertTo === rate.to ? 'border-primary bg-primary/5' : 'border-border'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold">{rate.from} → {rate.to}</span>
-                          <span className="text-sm font-mono">1:{rate.rate}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{rate.description}</p>
-                      </div>
-                    ))}
-
-                    <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                      <h4 className="font-semibold mb-2">Important Notes:</h4>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        <li>• Only monthly quota rice can be converted</li>
-                        <li>• Once converted, quota is marked as used</li>
-                        <li>• Delivery within 1-3 working days</li>
-                        <li>• Conversion is irreversible</li>
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
+                <Button 
+                  onClick={handleConvert} 
+                  disabled={loading || !convertQuantity || !convertTo}
+                  className="w-full"
+                >
+                  {loading ? 'Converting...' : 'Convert Rice'}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
+
+        {/* Info Card */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package2 className="h-5 w-5" />
+              How It Works
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• You can split your {monthlyQuota} kg quota: sell some and convert some</li>
+              <li>• Once you sell or convert any amount, you cannot claim that portion as rice delivery</li>
+              <li>• If you claim rice for delivery first, sell/convert options are disabled</li>
+              <li>• Quota resets at the beginning of each month</li>
+              <li>• Sell rate: ₹{ricePrice} per kg | Conversion rates vary by item</li>
+            </ul>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
